@@ -10,7 +10,7 @@ class LLMService:
         """Initialize with OpenAI API key"""
         openai.api_key = api_key
     
-    def generate_text(self, prompt, max_tokens=300, temperature=0.7, model="gpt-3.5-turbo"):
+    def generate_text(self, prompt, max_tokens=300, temperature=0.7, model="gpt-4"):
         """Generate text using OpenAI API"""
         try:
             response = openai.ChatCompletion.create(
@@ -25,134 +25,8 @@ class LLMService:
             return response.choices[0].message.content
         except Exception as e:
             print(f"Error in LLM text generation: {e}")
-            description = descriptions.get(theme, descriptions[default_theme])
-        
-        # Generate a simple map grid
-        width, height = 20, 20
-        tiles = []
-        
-        # Fill with appropriate terrain based on theme
-        if theme == 'forest':
-            base_tile = 'forest'
-            secondary_tile = 'grass'
-            tertiary_tile = 'water'
-        elif theme == 'mountain':
-            base_tile = 'mountain'
-            secondary_tile = 'grass'
-            tertiary_tile = 'rock'
-        elif theme == 'desert':
-            base_tile = 'sand'
-            secondary_tile = 'rock'
-            tertiary_tile = 'cactus'
-        elif theme == 'swamp':
-            base_tile = 'swamp'
-            secondary_tile = 'water'
-            tertiary_tile = 'grass'
-        elif theme == 'town':
-            base_tile = 'grass'
-            secondary_tile = 'path'
-            tertiary_tile = 'building'
-        elif theme == 'dungeon':
-            base_tile = 'stone'
-            secondary_tile = 'corridor'
-            tertiary_tile = 'wall'
-        else:
-            base_tile = 'grass'
-            secondary_tile = 'forest'
-            tertiary_tile = 'water'
-        
-        # Generate tile map with random distribution
-        for y in range(height):
-            row = []
-            for x in range(width):
-                r = random.random()
-                if r < 0.7:  # 70% base terrain
-                    row.append(base_tile)
-                elif r < 0.9:  # 20% secondary terrain
-                    row.append(secondary_tile)
-                else:  # 10% tertiary terrain
-                    row.append(tertiary_tile)
-            tiles.append(row)
-        
-        # Generate some landmarks
-        landmarks = []
-        landmark_types = ['natural', 'ruin', 'settlement', 'cave', 'special']
-        
-        # Number of landmarks scales with difficulty
-        num_landmarks = max(3, min(7, difficulty + 2))
-        
-        # Track used positions to avoid overlap
-        used_positions = set()
-        
-        for i in range(num_landmarks):
-            # Try to find unused position
-            attempts = 0
-            while attempts < 20:  # Limit attempts to prevent infinite loop
-                x = random.randint(0, width - 1)
-                y = random.randint(0, height - 1)
-                pos = (x, y)
-                if pos not in used_positions:
-                    used_positions.add(pos)
-                    break
-                attempts += 1
-            
-            landmark_type = random.choice(landmark_types)
-            
-            # Generate landmark name based on type and theme
-            if landmark_type == 'natural':
-                prefixes = ["Ancient", "Mystic", "Whispering", "Giant", "Crystal", "Shadow"]
-                suffixes = ["Tree", "Rock", "Pool", "Waterfall", "Geyser", "Formation"]
-                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
-            elif landmark_type == 'ruin':
-                prefixes = ["Abandoned", "Forgotten", "Ancient", "Crumbling", "Lost", "Haunted"]
-                suffixes = ["Temple", "Tower", "Fortress", "Shrine", "Palace", "Monument"]
-                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
-            elif landmark_type == 'settlement':
-                prefixes = ["Trader's", "Hunter's", "Miner's", "Pilgrim's", "Refugee", "Outlaw"]
-                suffixes = ["Camp", "Outpost", "Village", "Haven", "Rest", "Hideout"]
-                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
-            elif landmark_type == 'cave':
-                prefixes = ["Dark", "Echoing", "Hidden", "Glittering", "Damp", "Winding"]
-                suffixes = ["Cavern", "Grotto", "Cave", "Tunnel", "Passage", "Mine"]
-                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
-            else:  # special
-                special_names = [
-                    "Moonlit Altar", "Wizard's Laboratory", "Dragon's Rest",
-                    "Fairy Circle", "Elemental Nexus", "Time-Lost Shrine"
-                ]
-                name = random.choice(special_names)
-            
-            # Generate landmark description
-            landmark_desc = f"A {landmark_type} location in the {theme}. "
-            if landmark_type == 'natural':
-                landmark_desc += f"A remarkable {theme} feature that stands out from its surroundings."
-            elif landmark_type == 'ruin':
-                landmark_desc += f"The remains of an ancient structure, now reclaimed by the {theme}."
-            elif landmark_type == 'settlement':
-                landmark_desc += f"A small gathering of inhabitants who have adapted to life in the {theme}."
-            elif landmark_type == 'cave':
-                landmark_desc += f"An opening leading beneath the surface, promising both danger and discovery."
-            else:  # special
-                landmark_desc += f"A unique location with mysterious properties, unlike anything else in the {theme}."
-            
-            landmarks.append({
-                "name": name,
-                "description": landmark_desc,
-                "type": landmark_type,
-                "x": x,
-                "y": y
-            })
-        
-        return {
-            "name": name,
-            "description": description,
-            "map_data": {
-                "width": width,
-                "height": height,
-                "tiles": tiles
-            },
-            "landmarks": landmarks
-        }
+            # Fallback response
+            return self._generate_fallback_text(prompt)
     
     def _generate_fallback_quest(self, character, region, quest_type):
         """Generate a procedural quest when API call fails"""
@@ -838,8 +712,181 @@ class LLMService:
             "level_requirement": level_req,
             "properties": properties,
             "value": properties.get("value", int(character_level * 5 * rarity_factor))
-        } Fallback response
-            return self._generate_fallback_text(prompt)
+        }
+    
+    def _generate_fallback_text(self, prompt):
+        """Generate fallback text when API call fails"""
+        # Simple fallback for when the API isn't available
+        first_words = prompt.split()[:10]
+        theme = "mysterious" if "mysterious" in prompt.lower() else (
+            "dangerous" if "danger" in prompt.lower() else "intriguing")
+        
+        if "region" in prompt.lower() or "place" in prompt.lower():
+            return f"A {theme} place appears before you, shrouded in mist. The air feels charged with potential adventure."
+        elif "quest" in prompt.lower() or "mission" in prompt.lower():
+            return f"A {theme} task awaits, promising both danger and reward to those brave enough to undertake it."
+        elif "enemy" in prompt.lower() or "monster" in prompt.lower():
+            return f"A {theme} creature approaches, its intentions unclear but its presence commanding attention."
+        elif "dialogue" in prompt.lower() or "conversation" in prompt.lower():
+            return "The figure regards you with a measured gaze. 'What brings you to these parts, traveler?'"
+        else:
+            return "The world shifts subtly around you, responding to unseen forces. What will you do next?"
+    
+    def _generate_fallback_region(self, theme, difficulty, player_level):
+        """Generate a procedural region when API call fails"""
+        themes = {
+            'forest': ["Whispering Woods", "Ancient Grove", "Verdant Wilderness", "Emerald Canopy"],
+            'mountain': ["Craggy Peaks", "Mist-Shrouded Heights", "Stone Sentinels", "Clouded Summit"],
+            'desert': ["Endless Sands", "Scorched Wastes", "Dune Sea", "Sun's Anvil"],
+            'swamp': ["Murky Depths", "Foggy Marshland", "Mire of Shadows", "Boggy Lowlands"],
+            'town': ["Crossroads Haven", "Trader's Rest", "Hillside Settlement", "Riverside Village"],
+            'dungeon': ["Forgotten Depths", "Shadow Labyrinth", "Ancient Vault", "Ruined Chambers"]
+        }
+        
+        default_theme = 'forest'
+        if theme not in themes:
+            theme = default_theme
+        
+        name = random.choice(themes[theme])
+        
+        # Basic descriptions based on theme
+        descriptions = {
+            'forest': f"A dense woodland where sunlight filters through the canopy in dappled patterns. The trees stand ancient and watchful, home to countless creatures both mundane and magical. Level {difficulty} area.",
+            'mountain': f"Towering peaks rise majestically into the clouds, their slopes dotted with pine and rocky outcroppings. The thin air carries the distant cry of hunting birds. Level {difficulty} area.",
+            'desert': f"An endless expanse of shifting sand dunes under a merciless sun. By day the heat is unbearable, by night the cold is biting. Strange mirages appear on the horizon. Level {difficulty} area.",
+            'swamp': f"Murky waters wind between gnarled cypress trees draped in hanging moss. The air is thick with humidity and the buzz of insects. Deceptive footing makes travel treacherous. Level {difficulty} area.",
+            'town': f"A settlement of wooden and stone buildings where people go about their daily business. The central square features a well, and merchants hawk their wares from stalls. Level {difficulty} area.",
+            'dungeon': f"Ancient stonework corridors stretch into darkness, their walls inscribed with worn symbols. The air is stale and carries echoes from unseen chambers deeper within. Level {difficulty} area."
+        }
+        
+        description = descriptions.get(theme, descriptions[default_theme])
+        
+        # Generate a simple map grid
+        width, height = 20, 20
+        tiles = []
+        
+        # Fill with appropriate terrain based on theme
+        if theme == 'forest':
+            base_tile = 'forest'
+            secondary_tile = 'grass'
+            tertiary_tile = 'water'
+        elif theme == 'mountain':
+            base_tile = 'mountain'
+            secondary_tile = 'grass'
+            tertiary_tile = 'rock'
+        elif theme == 'desert':
+            base_tile = 'sand'
+            secondary_tile = 'rock'
+            tertiary_tile = 'cactus'
+        elif theme == 'swamp':
+            base_tile = 'swamp'
+            secondary_tile = 'water'
+            tertiary_tile = 'grass'
+        elif theme == 'town':
+            base_tile = 'grass'
+            secondary_tile = 'path'
+            tertiary_tile = 'building'
+        elif theme == 'dungeon':
+            base_tile = 'stone'
+            secondary_tile = 'corridor'
+            tertiary_tile = 'wall'
+        else:
+            base_tile = 'grass'
+            secondary_tile = 'forest'
+            tertiary_tile = 'water'
+        
+        # Generate tile map with random distribution
+        for y in range(height):
+            row = []
+            for x in range(width):
+                r = random.random()
+                if r < 0.7:  # 70% base terrain
+                    row.append(base_tile)
+                elif r < 0.9:  # 20% secondary terrain
+                    row.append(secondary_tile)
+                else:  # 10% tertiary terrain
+                    row.append(tertiary_tile)
+            tiles.append(row)
+        
+        # Generate some landmarks
+        landmarks = []
+        landmark_types = ['natural', 'ruin', 'settlement', 'cave', 'special']
+        
+        # Number of landmarks scales with difficulty
+        num_landmarks = max(3, min(7, difficulty + 2))
+        
+        # Track used positions to avoid overlap
+        used_positions = set()
+        
+        for i in range(num_landmarks):
+            # Try to find unused position
+            attempts = 0
+            while attempts < 20:  # Limit attempts to prevent infinite loop
+                x = random.randint(0, width - 1)
+                y = random.randint(0, height - 1)
+                pos = (x, y)
+                if pos not in used_positions:
+                    used_positions.add(pos)
+                    break
+                attempts += 1
+            
+            landmark_type = random.choice(landmark_types)
+            
+            # Generate landmark name based on type and theme
+            if landmark_type == 'natural':
+                prefixes = ["Ancient", "Mystic", "Whispering", "Giant", "Crystal", "Shadow"]
+                suffixes = ["Tree", "Rock", "Pool", "Waterfall", "Geyser", "Formation"]
+                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
+            elif landmark_type == 'ruin':
+                prefixes = ["Abandoned", "Forgotten", "Ancient", "Crumbling", "Lost", "Haunted"]
+                suffixes = ["Temple", "Tower", "Fortress", "Shrine", "Palace", "Monument"]
+                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
+            elif landmark_type == 'settlement':
+                prefixes = ["Trader's", "Hunter's", "Miner's", "Pilgrim's", "Refugee", "Outlaw"]
+                suffixes = ["Camp", "Outpost", "Village", "Haven", "Rest", "Hideout"]
+                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
+            elif landmark_type == 'cave':
+                prefixes = ["Dark", "Echoing", "Hidden", "Glittering", "Damp", "Winding"]
+                suffixes = ["Cavern", "Grotto", "Cave", "Tunnel", "Passage", "Mine"]
+                name = f"{random.choice(prefixes)} {random.choice(suffixes)}"
+            else:  # special
+                special_names = [
+                    "Moonlit Altar", "Wizard's Laboratory", "Dragon's Rest",
+                    "Fairy Circle", "Elemental Nexus", "Time-Lost Shrine"
+                ]
+                name = random.choice(special_names)
+            
+            # Generate landmark description
+            landmark_desc = f"A {landmark_type} location in the {theme}. "
+            if landmark_type == 'natural':
+                landmark_desc += f"A remarkable {theme} feature that stands out from its surroundings."
+            elif landmark_type == 'ruin':
+                landmark_desc += f"The remains of an ancient structure, now reclaimed by the {theme}."
+            elif landmark_type == 'settlement':
+                landmark_desc += f"A small gathering of inhabitants who have adapted to life in the {theme}."
+            elif landmark_type == 'cave':
+                landmark_desc += f"An opening leading beneath the surface, promising both danger and discovery."
+            else:  # special
+                landmark_desc += f"A unique location with mysterious properties, unlike anything else in the {theme}."
+            
+            landmarks.append({
+                "name": name,
+                "description": landmark_desc,
+                "type": landmark_type,
+                "x": x,
+                "y": y
+            })
+        
+        return {
+            "name": name,
+            "description": description,
+            "map_data": {
+                "width": width,
+                "height": height,
+                "tiles": tiles
+            },
+            "landmarks": landmarks
+        }
     
     def generate_region(self, theme, difficulty, player_level):
         """Generate a region description and features"""
@@ -875,7 +922,7 @@ class LLMService:
         
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
@@ -940,7 +987,7 @@ class LLMService:
         
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
@@ -998,7 +1045,7 @@ class LLMService:
         
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
@@ -1060,7 +1107,7 @@ class LLMService:
         
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
@@ -1111,7 +1158,7 @@ class LLMService:
         
         try:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo",
+                model="gpt-4",
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
@@ -1131,50 +1178,3 @@ class LLMService:
             print(f"Error in item generation: {e}")
             # Fallback to procedural generation
             return self._generate_fallback_item(item_type, rarity, character_level)
-    
-    def _generate_fallback_text(self, prompt):
-        """Generate fallback text when API call fails"""
-        # Simple fallback for when the API isn't available
-        first_words = prompt.split()[:10]
-        theme = "mysterious" if "mysterious" in prompt.lower() else (
-            "dangerous" if "danger" in prompt.lower() else "intriguing")
-        
-        if "region" in prompt.lower() or "place" in prompt.lower():
-            return f"A {theme} place appears before you, shrouded in mist. The air feels charged with potential adventure."
-        elif "quest" in prompt.lower() or "mission" in prompt.lower():
-            return f"A {theme} task awaits, promising both danger and reward to those brave enough to undertake it."
-        elif "enemy" in prompt.lower() or "monster" in prompt.lower():
-            return f"A {theme} creature approaches, its intentions unclear but its presence commanding attention."
-        elif "dialogue" in prompt.lower() or "conversation" in prompt.lower():
-            return "The figure regards you with a measured gaze. 'What brings you to these parts, traveler?'"
-        else:
-            return "The world shifts subtly around you, responding to unseen forces. What will you do next?"
-    
-    def _generate_fallback_region(self, theme, difficulty, player_level):
-        """Generate a procedural region when API call fails"""
-        themes = {
-            'forest': ["Whispering Woods", "Ancient Grove", "Verdant Wilderness", "Emerald Canopy"],
-            'mountain': ["Craggy Peaks", "Mist-Shrouded Heights", "Stone Sentinels", "Clouded Summit"],
-            'desert': ["Endless Sands", "Scorched Wastes", "Dune Sea", "Sun's Anvil"],
-            'swamp': ["Murky Depths", "Foggy Marshland", "Mire of Shadows", "Boggy Lowlands"],
-            'town': ["Crossroads Haven", "Trader's Rest", "Hillside Settlement", "Riverside Village"],
-            'dungeon': ["Forgotten Depths", "Shadow Labyrinth", "Ancient Vault", "Ruined Chambers"]
-        }
-        
-        default_theme = 'forest'
-        if theme not in themes:
-            theme = default_theme
-        
-        name = random.choice(themes[theme])
-        
-        # Basic descriptions based on theme
-        descriptions = {
-            'forest': f"A dense woodland where sunlight filters through the canopy in dappled patterns. The trees stand ancient and watchful, home to countless creatures both mundane and magical. Level {difficulty} area.",
-            'mountain': f"Towering peaks rise majestically into the clouds, their slopes dotted with pine and rocky outcroppings. The thin air carries the distant cry of hunting birds. Level {difficulty} area.",
-            'desert': f"An endless expanse of shifting sand dunes under a merciless sun. By day the heat is unbearable, by night the cold is biting. Strange mirages appear on the horizon. Level {difficulty} area.",
-            'swamp': f"Murky waters wind between gnarled cypress trees draped in hanging moss. The air is thick with humidity and the buzz of insects. Deceptive footing makes travel treacherous. Level {difficulty} area.",
-            'town': f"A settlement of wooden and stone buildings where people go about their daily business. The central square features a well, and merchants hawk their wares from stalls. Level {difficulty} area.",
-            'dungeon': f"Ancient stonework corridors stretch into darkness, their walls inscribed with worn symbols. The air is stale and carries echoes from unseen chambers deeper within. Level {difficulty} area."
-        }
-        
-        #
