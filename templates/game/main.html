@@ -1,0 +1,225 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Game{% endblock %}
+
+{% block content %}
+<div class="game-container">
+    <div class="game-header">
+        <div class="character-stats">
+            <div class="character-name">{{ character.name }}</div>
+            <div class="character-level">Level {{ character.level }} {{ character.character_class }}</div>
+            <div class="character-xp">XP: {{ character.xp }}/{{ character.xp_to_next_level }}</div>
+            <div class="character-gold">Gold: {{ character.gold }}</div>
+        </div>
+        <div class="region-info">
+            <div class="region-name">{{ region.name }}</div>
+            <div class="region-difficulty">Difficulty: {{ region.difficulty }}</div>
+            <div class="weather-status" id="weather-display">{{ world_state.weather }}</div>
+            <div class="time-of-day" id="time-display">{{ world_state.time_of_day }}</div>
+        </div>
+        <div class="game-menu">
+            <button id="inventoryBtn" class="menu-button">Inventory</button>
+            <button id="questsBtn" class="menu-button">Quests</button>
+            <button id="mapBtn" class="menu-button">Map</button>
+            <button id="settingsBtn" class="menu-button">Settings</button>
+        </div>
+    </div>
+
+    <div class="game-main">
+        <div class="game-canvas-container">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            <div id="loading-overlay" class="loading-overlay">
+                <div class="spinner"></div>
+                <div class="loading-text">Loading World...</div>
+            </div>
+        </div>
+
+        <div class="game-sidebar">
+            <div class="player-status">
+                <div class="status-bar health-bar">
+                    <div class="status-label">Health</div>
+                    <div class="status-value">{{ character.attributes.health }}/{{ character.attributes.max_health }}</div>
+                    <div class="bar-container">
+                        <div class="bar-fill health-fill" style="width: {{ (character.attributes.health / character.attributes.max_health) * 100 }}%"></div>
+                    </div>
+                </div>
+                <div class="status-bar mana-bar">
+                    <div class="status-label">Mana</div>
+                    <div class="status-value">{{ character.attributes.mana }}/{{ character.attributes.max_mana }}</div>
+                    <div class="bar-container">
+                        <div class="bar-fill mana-fill" style="width: {{ (character.attributes.mana / character.attributes.max_mana) * 100 }}%"></div>
+                    </div>
+                </div>
+                <div class="status-bar xp-bar">
+                    <div class="status-label">Experience</div>
+                    <div class="status-value">{{ character.xp }}/{{ character.xp_to_next_level }}</div>
+                    <div class="bar-container">
+                        <div class="bar-fill xp-fill" style="width: {{ (character.xp / character.xp_to_next_level) * 100 }}%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-panel">
+                <h3>Actions</h3>
+                <div class="action-buttons">
+                    <button id="exploreBtn" class="action-button">Explore</button>
+                    <button id="restBtn" class="action-button">Rest</button>
+                    <button id="travelBtn" class="action-button">Travel</button>
+                    <button id="interactBtn" class="action-button">Interact</button>
+                </div>
+            </div>
+
+            <div class="event-log">
+                <h3>Event Log</h3>
+                <div id="eventList" class="event-list">
+                    <div class="event-entry">Welcome to {{ region.name }}!</div>
+                    <div class="event-entry">The weather is {{ world_state.weather }}.</div>
+                    <div class="event-entry">It is currently {{ world_state.time_of_day }}.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="dialogPanel" class="dialog-panel hidden">
+        <div class="dialog-header">
+            <div id="dialogTitle" class="dialog-title">Conversation</div>
+            <button id="closeDialogBtn" class="close-button">&times;</button>
+        </div>
+        <div id="dialogContent" class="dialog-content"></div>
+        <div id="dialogOptions" class="dialog-options"></div>
+    </div>
+
+    <div id="inventoryPanel" class="inventory-panel hidden">
+        <div class="panel-header">
+            <div class="panel-title">Inventory</div>
+            <button id="closeInventoryBtn" class="close-button">&times;</button>
+        </div>
+        <div class="inventory-content">
+            <div class="inventory-stats">
+                <div>Capacity: <span id="inventoryCapacity">0/0</span></div>
+                <div>Gold: <span id="inventoryGold">{{ character.gold }}</span></div>
+            </div>
+            <div class="inventory-tabs">
+                <button class="tab-button active" data-tab="all">All</button>
+                <button class="tab-button" data-tab="weapons">Weapons</button>
+                <button class="tab-button" data-tab="armor">Armor</button>
+                <button class="tab-button" data-tab="consumables">Consumables</button>
+                <button class="tab-button" data-tab="misc">Misc</button>
+            </div>
+            <div class="inventory-grid" id="inventoryGrid"></div>
+            <div class="item-details" id="itemDetails"></div>
+        </div>
+    </div>
+
+    <div id="questPanel" class="quest-panel hidden">
+        <div class="panel-header">
+            <div class="panel-title">Quests</div>
+            <button id="closeQuestBtn" class="close-button">&times;</button>
+        </div>
+        <div class="quest-content">
+            <div class="quest-tabs">
+                <button class="tab-button active" data-tab="active">Active</button>
+                <button class="tab-button" data-tab="completed">Completed</button>
+            </div>
+            <div class="quest-list" id="questList"></div>
+            <div class="quest-details" id="questDetails"></div>
+        </div>
+    </div>
+
+    <div id="contextMenu" class="context-menu hidden">
+        <ul id="contextMenuItems"></ul>
+    </div>
+</div>
+
+<!-- Templates for dynamic content -->
+<template id="itemTemplate">
+    <div class="inventory-item" data-item-id="">
+        <div class="item-icon"></div>
+        <div class="item-name"></div>
+    </div>
+</template>
+
+<template id="questItemTemplate">
+    <div class="quest-item" data-quest-id="">
+        <div class="quest-title"></div>
+        <div class="quest-status"></div>
+    </div>
+</template>
+
+<!-- Game scripts -->
+<script src="{{ url_for('static', filename='js/engine/renderer.js') }}"></script>
+<script src="{{ url_for('static', filename='js/engine/input.js') }}"></script>
+<script src="{{ url_for('static', filename='js/engine/entity.js') }}"></script>
+<script src="{{ url_for('static', filename='js/engine/audio.js') }}"></script>
+<script src="{{ url_for('static', filename='js/engine/physics.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui/inventory.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui/dialog.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui/character.js') }}"></script>
+<script src="{{ url_for('static', filename='js/ui/minimap.js') }}"></script>
+<script src="{{ url_for('static', filename='js/game.js') }}"></script>
+
+<script>
+    // Initialize game with region data
+    document.addEventListener('DOMContentLoaded', function() {
+        // Parse region map data
+        const regionData = {
+            id: {{ region.id }},
+            name: "{{ region.name }}",
+            theme: "{{ region.theme }}",
+            difficulty: {{ region.difficulty }},
+            mapData: {% if region.map_data %}{{ region.map_data|safe }}{% else %}null{% endif %}
+        };
+
+        // Character position
+        const characterPosition = {
+            x: {{ world_state.position_x or 0 }},
+            y: {{ world_state.position_y or 0 }}
+        };
+
+        // Initialize game
+        Game.init(regionData, characterPosition);
+
+        // Set up button listeners
+        document.getElementById('inventoryBtn').addEventListener('click', function() {
+            window.location.href = "{{ url_for('game.inventory') }}";
+        });
+
+        document.getElementById('questsBtn').addEventListener('click', function() {
+            window.location.href = "{{ url_for('game.quests') }}";
+        });
+
+        document.getElementById('mapBtn').addEventListener('click', function() {
+            Game.toggleMap();
+        });
+
+        document.getElementById('exploreBtn').addEventListener('click', function() {
+            Game.startExploration();
+        });
+
+        document.getElementById('restBtn').addEventListener('click', function() {
+            Game.restCharacter();
+        });
+
+        document.getElementById('travelBtn').addEventListener('click', function() {
+            window.location.href = "{{ url_for('game.region_select') }}";
+        });
+
+        document.getElementById('interactBtn').addEventListener('click', function() {
+            Game.interact();
+        });
+
+        // Close buttons for panels
+        document.getElementById('closeDialogBtn').addEventListener('click', function() {
+            document.getElementById('dialogPanel').classList.add('hidden');
+        });
+
+        document.getElementById('closeInventoryBtn').addEventListener('click', function() {
+            document.getElementById('inventoryPanel').classList.add('hidden');
+        });
+
+        document.getElementById('closeQuestBtn').addEventListener('click', function() {
+            document.getElementById('questPanel').classList.add('hidden');
+        });
+    });
+</script>
+{% endblock %}

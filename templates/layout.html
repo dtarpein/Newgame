@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Realm Weaver{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/game.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <div class="container">
+        <header class="main-header">
+            <div class="logo">
+                <a href="{{ url_for('index') }}">Realm Weaver</a>
+            </div>
+            <nav class="main-nav">
+                {% if current_user.is_authenticated %}
+                    <ul>
+                        <li><a href="{{ url_for('game.game_home') }}">Game</a></li>
+                        <li><a href="{{ url_for('character.character_select') }}">Characters</a></li>
+                        <li><a href="{{ url_for('auth.profile') }}">Profile</a></li>
+                        <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+                    </ul>
+                {% else %}
+                    <ul>
+                        <li><a href="{{ url_for('index') }}">Home</a></li>
+                        <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                        <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+                    </ul>
+                {% endif %}
+            </nav>
+        </header>
+
+        <div class="notifications">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="notification {{ category }}">
+                            {{ message }}
+                            <button class="close-notification">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <main class="content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="main-footer">
+            <p>&copy; 2025 Realm Weaver - An Interactive Fantasy Adventure</p>
+        </footer>
+    </div>
+
+    <script>
+        // Close notification buttons
+        document.querySelectorAll('.close-notification').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.style.display = 'none';
+            });
+        });
+
+        // Auto-hide notifications after 5 seconds
+        setTimeout(function() {
+            document.querySelectorAll('.notification').forEach(notification => {
+                notification.style.opacity = '0';
+                setTimeout(function() {
+                    notification.style.display = 'none';
+                }, 500);
+            });
+        }, 5000);
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
