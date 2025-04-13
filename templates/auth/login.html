@@ -1,0 +1,62 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Login{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="form-card">
+        <h2 class="form-title">Login to Realm Weaver</h2>
+        
+        <form method="POST" action="{{ url_for('auth.login') }}">
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-input" required autofocus>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-input" required>
+            </div>
+            
+            <div class="form-group remember-me">
+                <input type="checkbox" id="remember" name="remember">
+                <label for="remember">Remember me</label>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="form-button">Login</button>
+            </div>
+            
+            <div class="form-footer">
+                <p>Don't have an account? <a href="{{ url_for('auth.register') }}">Register</a></p>
+                <p><a href="{{ url_for('auth.reset_password_request') }}">Forgot your password?</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        max-width: 500px;
+        margin: 40px auto;
+    }
+    
+    .remember-me {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .remember-me input {
+        margin-right: 10px;
+    }
+    
+    .form-buttons {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-buttons .form-button {
+        width: 100%;
+    }
+</style>
+{% endblock %}

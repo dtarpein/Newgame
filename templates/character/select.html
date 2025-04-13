@@ -1,0 +1,158 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Character Selection{% endblock %}
+
+{% block content %}
+<div class="character-selection-container">
+    <h2>Select Your Character</h2>
+    
+    <div class="character-selection">
+        {% for character in characters %}
+        <div class="character-card {% if character.id == active_character_id %}active{% endif %}">
+            <div class="character-header">
+                <h3>{{ character.name }}</h3>
+            </div>
+            <div class="character-portrait" style="background-position: {{ character.appearance.get('sprite_offset_x', 0) }}px {{ character.appearance.get('sprite_offset_y', 0) }}px"></div>
+            <div class="character-body">
+                <div class="character-stats-list">
+                    <div class="character-stat">
+                        <span class="character-stat-label">Class:</span>
+                        <span class="character-stat-value">{{ character.character_class|title }}</span>
+                    </div>
+                    <div class="character-stat">
+                        <span class="character-stat-label">Level:</span>
+                        <span class="character-stat-value">{{ character.level }}</span>
+                    </div>
+                    <div class="character-stat">
+                        <span class="character-stat-label">Last Played:</span>
+                        <span class="character-stat-value">{{ character.last_played|date }}</span>
+                    </div>
+                </div>
+            </div>
+            <div class="character-footer">
+                <a href="{{ url_for('character.select_character', character_id=character.id) }}" class="btn btn-primary">Play</a>
+                <a href="{{ url_for('character.character_detail', character_id=character.id) }}" class="btn btn-outline">Details</a>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="new-character-card" onclick="window.location.href='{{ url_for('character.character_create') }}'">
+            <div class="new-character-icon">+</div>
+            <h3>Create New Character</h3>
+            <p>Begin a new adventure in the Realm</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .character-selection-container {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .character-selection-container h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .character-selection {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .character-card {
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-md);
+        transition: transform 0.3s, box-shadow 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .character-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .character-card.active {
+        border-color: var(--primary-color);
+    }
+    
+    .character-header {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 1rem;
+        text-align: center;
+    }
+    
+    .character-header h3 {
+        margin: 0;
+        color: white;
+    }
+    
+    .character-portrait {
+        height: 150px;
+        background-image: url('/static/assets/sprites/character_portraits.png');
+        background-repeat: no-repeat;
+        background-size: 600px auto;
+        background-color: #333;
+    }
+    
+    .character-body {
+        padding: 1.5rem;
+    }
+    
+    .character-stats-list {
+        margin-bottom: 1.5rem;
+    }
+    
+    .character-stat {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .character-stat-label {
+        font-weight: 500;
+    }
+    
+    .character-footer {
+        display: flex;
+        justify-content: space-between;
+        padding: 1rem;
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .new-character-card {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: rgba(0, 0, 0, 0.05);
+        border: 2px dashed var(--border-color);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s;
+        height: 100%;
+    }
+    
+    .new-character-card:hover {
+        border-color: var(--primary-color);
+        background-color: rgba(0, 0, 0, 0.02);
+    }
+    
+    .new-character-icon {
+        font-size: 3rem;
+        color: var(--primary-color);
+        margin-bottom: 1rem;
+    }
+    
+    .new-character-card h3 {
+        margin-bottom: 0.5rem;
+    }
+</style>
+{% endblock %}

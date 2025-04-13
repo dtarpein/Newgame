@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Register{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+    <div class="form-card">
+        <h2 class="form-title">Create an Account</h2>
+        
+        <form method="POST" action="{{ url_for('auth.register') }}">
+            <div class="form-group">
+                <label class="form-label" for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-input" required autofocus>
+                <div class="form-hint">Username must be between 3-20 characters and contain only letters, numbers, and underscores.</div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="email">Email</label>
+                <input type="email" id="email" name="email" class="form-input" required>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password">Password</label>
+                <input type="password" id="password" name="password" class="form-input" required>
+                <div class="form-hint">Password must be at least 8 characters long.</div>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="password_confirm">Confirm Password</label>
+                <input type="password" id="password_confirm" name="password_confirm" class="form-input" required>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="submit" class="form-button">Register</button>
+            </div>
+            
+            <div class="form-footer">
+                <p>Already have an account? <a href="{{ url_for('auth.login') }}">Login</a></p>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .auth-container {
+        max-width: 500px;
+        margin: 40px auto;
+    }
+    
+    .form-hint {
+        font-size: 0.8rem;
+        color: #777;
+        margin-top: 0.25rem;
+    }
+    
+    .form-buttons {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-buttons .form-button {
+        width: 100%;
+    }
+</style>
+{% endblock %}

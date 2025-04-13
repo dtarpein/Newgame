@@ -1,0 +1,513 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Create Character{% endblock %}
+
+{% block content %}
+<div class="character-creation">
+    <h2>Create New Character</h2>
+    
+    <div class="character-creation-container">
+        <form method="POST" action="{{ url_for('character.character_create') }}">
+            <div class="creation-sections">
+                <div class="creation-section basic-info">
+                    <h3>Basic Information</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label" for="name">Character Name</label>
+                        <input type="text" id="name" name="name" class="form-input" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Character Class</label>
+                        <div class="class-options">
+                            {% for class_name, class_data in character_classes.items() %}
+                            <div class="class-option">
+                                <input type="radio" id="class_{{ class_name }}" name="character_class" value="{{ class_name }}" required {% if loop.first %}checked{% endif %}>
+                                <label for="class_{{ class_name }}">
+                                    <div class="class-icon" style="background-position: {{ loop.index0 * -50 }}px 0;"></div>
+                                    <div class="class-name">{{ class_name|title }}</div>
+                                </label>
+                                <div class="class-tooltip">
+                                    <h4>{{ class_name|title }}</h4>
+                                    <p>{{ class_data.description }}</p>
+                                    <div class="class-attributes">
+                                        {% for attr, bonus in class_data.attribute_bonuses.items() %}
+                                        <div class="class-attribute">
+                                            <span class="attribute-name">{{ attr|title }}:</span>
+                                            <span class="attribute-value">+{{ bonus }}</span>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                    <div class="class-skills">
+                                        <strong>Starting Skills:</strong>
+                                        <ul>
+                                            {% for skill in class_data.starting_skills %}
+                                            <li>{{ skill|replace('_', ' ')|title }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="creation-section appearance">
+                    <h3>Appearance</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Hair Style</label>
+                        <div class="appearance-options">
+                            <div class="appearance-option">
+                                <input type="radio" id="hair_1" name="hair_style" value="1" checked>
+                                <label for="hair_1">
+                                    <div class="hair-preview" style="background-position: 0 0;"></div>
+                                </label>
+                            </div>
+                            <div class="appearance-option">
+                                <input type="radio" id="hair_2" name="hair_style" value="2">
+                                <label for="hair_2">
+                                    <div class="hair-preview" style="background-position: -50px 0;"></div>
+                                </label>
+                            </div>
+                            <div class="appearance-option">
+                                <input type="radio" id="hair_3" name="hair_style" value="3">
+                                <label for="hair_3">
+                                    <div class="hair-preview" style="background-position: -100px 0;"></div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Hair Color</label>
+                        <div class="color-options">
+                            <div class="color-option">
+                                <input type="radio" id="hair_color_1" name="hair_color" value="brown" checked>
+                                <label for="hair_color_1" style="background-color: #8B4513;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="hair_color_2" name="hair_color" value="black">
+                                <label for="hair_color_2" style="background-color: #000000;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="hair_color_3" name="hair_color" value="blonde">
+                                <label for="hair_color_3" style="background-color: #FFD700;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="hair_color_4" name="hair_color" value="red">
+                                <label for="hair_color_4" style="background-color: #B22222;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="hair_color_5" name="hair_color" value="white">
+                                <label for="hair_color_5" style="background-color: #F5F5F5;"></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Skin Tone</label>
+                        <div class="color-options">
+                            <div class="color-option">
+                                <input type="radio" id="skin_1" name="skin_tone" value="fair" checked>
+                                <label for="skin_1" style="background-color: #FFDFC4;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="skin_2" name="skin_tone" value="light">
+                                <label for="skin_2" style="background-color: #F0D5BE;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="skin_3" name="skin_tone" value="medium">
+                                <label for="skin_3" style="background-color: #D8B094;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="skin_4" name="skin_tone" value="tan">
+                                <label for="skin_4" style="background-color: #BB9066;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="skin_5" name="skin_tone" value="dark">
+                                <label for="skin_5" style="background-color: #8D5524;"></label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Eye Color</label>
+                        <div class="color-options">
+                            <div class="color-option">
+                                <input type="radio" id="eye_1" name="eye_color" value="brown" checked>
+                                <label for="eye_1" style="background-color: #8B4513;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="eye_2" name="eye_color" value="blue">
+                                <label for="eye_2" style="background-color: #1E90FF;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="eye_3" name="eye_color" value="green">
+                                <label for="eye_3" style="background-color: #228B22;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="eye_4" name="eye_color" value="gray">
+                                <label for="eye_4" style="background-color: #708090;"></label>
+                            </div>
+                            <div class="color-option">
+                                <input type="radio" id="eye_5" name="eye_color" value="amber">
+                                <label for="eye_5" style="background-color: #FFC125;"></label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="creation-section preview">
+                    <h3>Character Preview</h3>
+                    <div class="character-preview">
+                        <div class="character-preview-image" id="characterPreview"></div>
+                    </div>
+                    
+                    <div class="preview-stats">
+                        <h4>Starting Attributes</h4>
+                        <div class="preview-attributes" id="previewAttributes">
+                            <!-- Attributes will be populated via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-buttons">
+                <button type="button" class="btn btn-outline" onclick="window.location.href='{{ url_for('character.character_select') }}'">Cancel</button>
+                <button type="submit" class="btn btn-primary">Create Character</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .character-creation {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .character-creation h2 {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    .character-creation-container {
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .creation-sections {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 2rem;
+    }
+    
+    .creation-section {
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+        padding: 1.5rem;
+    }
+    
+    .creation-section h3 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+    
+    /* Class selection */
+    .class-options {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .class-option {
+        position: relative;
+    }
+    
+    .class-option input[type="radio"] {
+        display: none;
+    }
+    
+    .class-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .class-option input[type="radio"]:checked + label {
+        border-color: var(--primary-color);
+        background-color: rgba(74, 44, 130, 0.05);
+    }
+    
+    .class-icon {
+        width: 50px;
+        height: 50px;
+        background-image: url('/static/assets/sprites/class_icons.png');
+        background-repeat: no-repeat;
+        margin-bottom: 0.5rem;
+    }
+    
+    .class-name {
+        font-weight: 500;
+    }
+    
+    .class-tooltip {
+        display: none;
+        position: absolute;
+        left: 110%;
+        top: 0;
+        width: 280px;
+        background-color: var(--card-background);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+        box-shadow: var(--shadow-md);
+        z-index: 10;
+    }
+    
+    .class-option:hover .class-tooltip {
+        display: block;
+    }
+    
+    .class-tooltip h4 {
+        margin-top: 0;
+        margin-bottom: 0.5rem;
+    }
+    
+    .class-tooltip p {
+        margin-bottom: 1rem;
+    }
+    
+    .class-attributes {
+        margin-bottom: 1rem;
+    }
+    
+    .class-attribute {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.25rem;
+    }
+    
+    .class-skills ul {
+        margin: 0.5rem 0 0 1.5rem;
+        padding: 0;
+    }
+    
+    /* Appearance selection */
+    .appearance-options {
+        display: flex;
+        gap: 1rem;
+    }
+    
+    .appearance-option input[type="radio"] {
+        display: none;
+    }
+    
+    .appearance-option label {
+        display: block;
+        cursor: pointer;
+    }
+    
+    .appearance-option input[type="radio"]:checked + label {
+        outline: 2px solid var(--primary-color);
+    }
+    
+    .hair-preview {
+        width: 50px;
+        height: 50px;
+        background-image: url('/static/assets/sprites/hair_styles.png');
+        background-repeat: no-repeat;
+        border-radius: var(--radius-sm);
+        background-color: #DDD;
+    }
+    
+    .color-options {
+        display: flex;
+        gap: 0.75rem;
+    }
+    
+    .color-option input[type="radio"] {
+        display: none;
+    }
+    
+    .color-option label {
+        display: block;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        cursor: pointer;
+        border: 2px solid #DDD;
+    }
+    
+    .color-option input[type="radio"]:checked + label {
+        border-color: var(--primary-color);
+    }
+    
+    /* Character preview */
+    .character-preview {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .character-preview-image {
+        width: 200px;
+        height: 300px;
+        background-color: #333;
+        background-image: url('/static/assets/sprites/character_full.png');
+        background-repeat: no-repeat;
+        background-position: 0 0;
+    }
+    
+    .preview-attributes {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.5rem;
+    }
+    
+    .preview-attribute {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+        background-color: rgba(0, 0, 0, 0.04);
+        border-radius: var(--radius-sm);
+    }
+    
+    .attribute-value {
+        font-weight: bold;
+    }
+    
+    /* Form buttons */
+    .form-buttons {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 2rem;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 992px) {
+        .creation-sections {
+            grid-template-columns: 1fr 1fr;
+        }
+        
+        .creation-section.preview {
+            grid-column: span 2;
+            display: flex;
+            gap: 2rem;
+        }
+        
+        .character-preview {
+            flex: 1;
+        }
+        
+        .preview-stats {
+            flex: 1;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .creation-sections {
+            grid-template-columns: 1fr;
+        }
+        
+        .creation-section.preview {
+            grid-column: span 1;
+            flex-direction: column;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Store character class data
+        const classData = {
+            {% for class_name, class_data in character_classes.items() %}
+            '{{ class_name }}': {
+                attributes: {
+                    {% for attr, bonus in class_data.attribute_bonuses.items() %}
+                    '{{ attr }}': {{ bonus }},
+                    {% endfor %}
+                }
+            },
+            {% endfor %}
+        };
+        
+        // Default attributes (from config)
+        const baseAttributes = {
+            'health': 100,
+            'max_health': 100,
+            'mana': 50,
+            'max_mana': 50,
+            'strength': 10,
+            'intelligence': 10,
+            'agility': 10,
+            'charisma': 10
+        };
+        
+        // Function to update preview
+        function updatePreview() {
+            // Get selected class
+            const selectedClass = document.querySelector('input[name="character_class"]:checked').value;
+            
+            // Calculate attributes
+            const attributes = {...baseAttributes};
+            const classAttributes = classData[selectedClass].attributes;
+            
+            for (const [attr, bonus] of Object.entries(classAttributes)) {
+                if (attributes[attr] !== undefined) {
+                    attributes[attr] += bonus;
+                }
+            }
+            
+            // Update preview attributes
+            const previewAttributes = document.getElementById('previewAttributes');
+            previewAttributes.innerHTML = '';
+            
+            for (const [attr, value] of Object.entries(attributes)) {
+                // Skip max attributes in display
+                if (attr.startsWith('max_')) continue;
+                
+                const attrDiv = document.createElement('div');
+                attrDiv.className = 'preview-attribute';
+                
+                const attrName = document.createElement('span');
+                attrName.className = 'attribute-name';
+                attrName.textContent = attr.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                
+                const attrValue = document.createElement('span');
+                attrValue.className = 'attribute-value';
+                attrValue.textContent = value;
+                
+                attrDiv.appendChild(attrName);
+                attrDiv.appendChild(attrValue);
+                previewAttributes.appendChild(attrDiv);
+            }
+            
+            // Update character preview image
+            // This would be more complex in a real implementation
+            const characterPreview = document.getElementById('characterPreview');
+            characterPreview.style.backgroundPosition = `${selectedClass === 'warrior' ? '0' : selectedClass === 'mage' ? '-200px' : selectedClass === 'rogue' ? '-400px' : '-600px'} 0`;
+        }
+        
+        // Add event listeners to update preview
+        document.querySelectorAll('input[name="character_class"]').forEach(input => {
+            input.addEventListener('change', updatePreview);
+        });
+        
+        // Initialize preview
+        updatePreview();
+    });
+</script>
+{% endblock %}
