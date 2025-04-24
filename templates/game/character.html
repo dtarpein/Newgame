@@ -1,0 +1,477 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Character Sheet{% endblock %}
+
+{% block content %}
+<div class="character-sheet-page">
+    <div class="character-sheet-header">
+        <h2>Character Sheet</h2>
+        <div class="navigation-buttons">
+            <a href="{{ url_for('game.game_home') }}" class="btn btn-outline">Back to Game</a>
+        </div>
+    </div>
+    
+    <div class="character-sheet">
+        <div class="character-portrait-section">
+            <div class="character-portrait" style="background-position: {{ character.appearance.get('sprite_offset_x', 0) }}px {{ character.appearance.get('sprite_offset_y', 0) }}px"></div>
+            <div class="character-name-plate">
+                <h3>{{ character.name }}</h3>
+                <div class="character-class-level">
+                    <span class="character-class">{{ character.character_class|title }}</span>
+                    <span class="character-level">Level {{ character.level }}</span>
+                </div>
+            </div>
+            <div class="character-progress">
+                <div class="xp-bar">
+                    <div class="xp-fill" style="width: {{ (character.xp / character.xp_to_next_level) * 100 }}%"></div>
+                </div>
+                <div class="xp-text">
+                    {{ character.xp }} / {{ character.xp_to_next_level }} XP to Level {{ character.level + 1 }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="character-stats-section">
+            <h3>Attributes</h3>
+            <div class="stat-bars">
+                <div class="stat-bar health-bar">
+                    <div class="stat-label">Health</div>
+                    <div class="bar-container">
+                        <div class="bar-fill health-fill" style="width: {{ (character.attributes.health / character.attributes.max_health) * 100 }}%"></div>
+                    </div>
+                    <div class="stat-value">{{ character.attributes.health }} / {{ character.attributes.max_health }}</div>
+                </div>
+                
+                <div class="stat-bar mana-bar">
+                    <div class="stat-label">Mana</div>
+                    <div class="bar-container">
+                        <div class="bar-fill mana-fill" style="width: {{ (character.attributes.mana / character.attributes.max_mana) * 100 }}%"></div>
+                    </div>
+                    <div class="stat-value">{{ character.attributes.mana }} / {{ character.attributes.max_mana }}</div>
+                </div>
+            </div>
+            
+            <div class="attribute-grid">
+                <div class="attribute-item">
+                    <div class="attribute-name">Strength</div>
+                    <div class="attribute-value">{{ character.attributes.strength }}</div>
+                    <div class="attribute-description">Physical power and carrying capacity</div>
+                </div>
+                
+                <div class="attribute-item">
+                    <div class="attribute-name">Intelligence</div>
+                    <div class="attribute-value">{{ character.attributes.intelligence }}</div>
+                    <div class="attribute-description">Magic power and learning ability</div>
+                </div>
+                
+                <div class="attribute-item">
+                    <div class="attribute-name">Agility</div>
+                    <div class="attribute-value">{{ character.attributes.agility }}</div>
+                    <div class="attribute-description">Speed, dodge chance, critical hit</div>
+                </div>
+                
+                <div class="attribute-item">
+                    <div class="attribute-name">Charisma</div>
+                    <div class="attribute-value">{{ character.attributes.charisma }}</div>
+                    <div class="attribute-description">NPC interactions, prices</div>
+                </div>
+            </div>
+            
+            <h3>Derived Stats</h3>
+            <div class="derived-stats-grid">
+                <div class="derived-stat-item">
+                    <div class="derived-stat-name">Physical Defense</div>
+                    <div class="derived-stat-value">{{ character.attributes.physical_defense }}</div>
+                </div>
+                
+                <div class="derived-stat-item">
+                    <div class="derived-stat-name">Magic Defense</div>
+                    <div class="derived-stat-value">{{ character.attributes.magic_defense }}</div>
+                </div>
+                
+                <div class="derived-stat-item">
+                    <div class="derived-stat-name">Critical Chance</div>
+                    <div class="derived-stat-value">{{ character.attributes.critical_chance }}%</div>
+                </div>
+                
+                <div class="derived-stat-item">
+                    <div class="derived-stat-name">Gold</div>
+                    <div class="derived-stat-value">{{ character.gold }}</div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="character-skills-section">
+            <h3>Skills & Abilities</h3>
+            <div class="skills-list">
+                {% for skill in character.skills %}
+                <div class="skill-item">
+                    <div class="skill-header">
+                        <div class="skill-name">{{ skill.skill_name|replace('_', ' ')|title }}</div>
+                        <div class="skill-level">Level {{ skill.skill_level }}</div>
+                    </div>
+                    <div class="skill-type">{{ skill.skill_type|title }}</div>
+                    <div class="skill-description">{{ skill.skill_description }}</div>
+                    {% if skill.skill_effect %}
+                        {% set effect = skill.skill_effect|from_json %}
+                        <div class="skill-effects">
+                            <div class="skill-effect-header">Effects:</div>
+                            <ul class="skill-effect-list">
+                                {% for effect_type, effect_value in effect.items() %}
+                                <li>{{ effect_type|replace('_', ' ')|title }}: {{ effect_value }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <div class="character-details-section">
+            <h3>Character Details</h3>
+            <div class="character-details-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Created</div>
+                    <div class="detail-value">{{ character.created_at|date }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Last Played</div>
+                    <div class="detail-value">{{ character.last_played|date }}</div>
+                </div>
+                
+                <div class="detail-item">
+                    <div class="detail-label">Appearance</div>
+                    <div class="detail-value">
+                        {% if character.appearance %}
+                            {% set appearance = character.appearance|from_json %}
+                            {% for key, value in appearance.items() %}
+                                {{ key|replace('_', ' ')|title }}: {{ value|title }}{% if not loop.last %}, {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            Default
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .character-sheet-page {
+        max-width: 1000px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .character-sheet-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .character-sheet {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+        gap: 2rem;
+    }
+    
+    .character-portrait-section {
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        grid-row: 1 / 2;
+    }
+    
+    .character-portrait {
+        width: 200px;
+        height: 200px;
+        background-image: url('/static/assets/sprites/character_portraits_large.png');
+        background-repeat: no-repeat;
+        border-radius: 50%;
+        border: 4px solid var(--primary-color);
+        margin-bottom: 1.5rem;
+    }
+    
+    .character-name-plate {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    
+    .character-name-plate h3 {
+        margin-bottom: 0.5rem;
+    }
+    
+    .character-class-level {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .character-class {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .character-progress {
+        width: 100%;
+        margin-top: 1rem;
+    }
+    
+    .xp-bar {
+        height: 10px;
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 5px;
+        overflow: hidden;
+        margin-bottom: 0.5rem;
+    }
+    
+    .xp-fill {
+        height: 100%;
+        background-color: var(--primary-color);
+    }
+    
+    .xp-text {
+        text-align: center;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .character-stats-section {
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+        grid-row: 1 / 3;
+        grid-column: 2 / 3;
+    }
+    
+    .character-stats-section h3 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+    
+    .stat-bars {
+        margin-bottom: 2rem;
+    }
+    
+    .stat-bar {
+        margin-bottom: 1rem;
+    }
+    
+    .stat-label {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .bar-container {
+        height: 20px;
+        background-color: rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 0.25rem;
+    }
+    
+    .bar-fill {
+        height: 100%;
+    }
+    
+    .health-fill {
+        background-color: #e53935;
+    }
+    
+    .mana-fill {
+        background-color: #1e88e5;
+    }
+    
+    .stat-value {
+        text-align: right;
+        font-size: 0.9rem;
+    }
+    
+    .attribute-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .attribute-item {
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+    }
+    
+    .attribute-name {
+        font-weight: 500;
+    }
+    
+    .attribute-value {
+        font-size: 1.5rem;
+        margin: 0.5rem 0;
+        color: var(--primary-color);
+    }
+    
+    .attribute-description {
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .derived-stats-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+    
+    .derived-stat-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.75rem;
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+    }
+    
+    .derived-stat-name {
+        font-weight: 500;
+    }
+    
+    .derived-stat-value {
+        color: var(--primary-color);
+    }
+    
+    .character-skills-section {
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+        grid-row: 2 / 3;
+        grid-column: 1 / 2;
+    }
+    
+    .character-skills-section h3 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+    
+    .skills-list {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .skill-item {
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .skill-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .skill-name {
+        font-weight: 500;
+    }
+    
+    .skill-level {
+        background-color: var(--primary-color);
+        color: white;
+        padding: 0.1rem 0.5rem;
+        border-radius: var(--radius-xs);
+        font-size: 0.8rem;
+    }
+    
+    .skill-type {
+        font-size: 0.9rem;
+        color: #666;
+        margin-bottom: 0.5rem;
+    }
+    
+    .skill-effects {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .skill-effect-header {
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    
+    .skill-effect-list {
+        margin: 0;
+        padding-left: 1.5rem;
+    }
+    
+    .character-details-section {
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+        grid-row: 3 / 4;
+        grid-column: 1 / 3;
+    }
+    
+    .character-details-section h3 {
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border-color);
+        padding-bottom: 0.5rem;
+    }
+    
+    .character-details-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .detail-item {
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+    }
+    
+    .detail-label {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .character-sheet {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto;
+        }
+        
+        .character-stats-section,
+        .character-skills-section,
+        .character-details-section {
+            grid-column: 1 / 2;
+        }
+        
+        .character-stats-section {
+            grid-row: 2 / 3;
+        }
+        
+        .character-skills-section {
+            grid-row: 3 / 4;
+        }
+        
+        .character-details-section {
+            grid-row: 4 / 5;
+        }
+    }
+</style>
+{% endblock %}

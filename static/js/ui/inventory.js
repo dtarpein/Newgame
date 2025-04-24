@@ -1,593 +1,605 @@
-/**
- * Inventory UI System
- * Handles displaying and interacting with player inventory
- */
-class InventoryUI {
-    constructor(game) {
-        this.game = game;
-        this.isOpen = false;
-        this.currentTab = 'all';
-        this.items = [];
-        this.selectedItem = null;
+// Inventory UI module for Realm Weaver
+// This module handles the inventory interface
+
+(function() {
+    // Inventory state
+    let inventoryData = {
+        items: [],
+        gold: 0,
+        capacity: {
+            used: 0,
+            max: 20
+        }
+    };
+    
+    // DOM elements
+    let inventoryPanel;
+    let inventoryGrid;
+    let capacityDisplay;
+    let goldDisplay;
+    let itemDetailsPanel;
+    
+    // Active tab
+    let activeTab = 'all';
+    
+    // Initialize inventory UI
+    function init() {
+        // Get DOM elements
+        inventoryPanel = document.getElementById('inventoryPanel');
+        inventoryGrid = document.getElementById('inventoryGrid');
+        capacityDisplay = document.getElementById('inventoryCapacity');
+        goldDisplay = document.getElementById('inventoryGold');
+        itemDetailsPanel = document.getElementById('itemDetails');
         
-        // UI Elements
-        this.panel = document.getElementById('inventoryPanel');
-        this.grid = document.getElementById('inventoryGrid');
-        this.capacityEl = document.getElementById('inventoryCapacity');
-        this.goldEl = document.getElementById('inventoryGold');
-        this.detailsEl = document.getElementById('itemDetails');
+        // Set up event listeners
+        setupEventListeners();
         
-        // Initialize UI event listeners
-        this.initEventListeners();
+        // Load initial inventory data
+        loadInventoryData();
+        
+        console.log('Inventory UI initialized');
+        return true;
     }
     
-    /**
-     * Initialize event listeners for inventory UI
-     */
-    initEventListeners() {
-        // Tab buttons
-        const tabButtons = document.querySelectorAll('.inventory-tabs .tab-button');
-        tabButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                // Remove active class from all tabs
-                tabButtons.forEach(btn => btn.classList.remove('active'));
-                
-                // Add active class to clicked tab
-                button.classList.add('active');
-                
-                // Update current tab
-                this.currentTab = button.dataset.tab;
-                
-                // Filter items based on tab
-                this.filterItems();
-            });
-        });
-        
-        // Close button
+    // Set up event listeners
+    function setupEventListeners() {
+        // Panel close button
         const closeButton = document.getElementById('closeInventoryBtn');
         if (closeButton) {
-            closeButton.addEventListener('click', () => {
-                this.hide();
-            });
+            closeButton.addEventListener('click', hideInventory);
         }
         
-        // Keyboard shortcut (ESC to close)
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && this.isOpen) {
-                this.hide();
-            }
-            
-            // I key to toggle inventory
-            if (e.key === 'i') {
-                this.toggle();
+        // Tab buttons
+        const tabButtons = document.querySelectorAll('.inventory-panel .tab-button');
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tab = button.getAttribute('data-tab');
+                setActiveTab(tab);
+            });
+        });
+        
+        // Key listener for inventory toggle
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'i') {
+                toggleInventory();
+            } else if (event.key === 'Escape' && isInventoryVisible()) {
+                hideInventory();
             }
         });
     }
     
-    /**
-     * Show inventory panel
-     */
-    show() {
-        if (this.isOpen) return;
-        
-        // Play open sound
-        if (this.game.audioManager) {
-            this.game.audioManager.playUISound('inventory');
-        }
-        
-        // Show panel
-        this.panel.classList.remove('hidden');
-        this.isOpen = true;
-        
-        // Update inventory state
-        this.loadItems();
-        
-        // Set previous game state
-        this.previousGameState = this.game.state;
-        this.game.state = 'inventory';
+    // Load inventory data from server
+    function loadInventoryData() {
+        fetch('/api/character/inventory')
+            .then(response => response.json())
+            .then(data => {
+                inventoryData.items = data;
+                inventoryData.capacity.used = data.length;
+                
+                // Get gold from character
+                fetch('/api/character/current')
+                    .then(response => response.json())
+                    .then(characterData => {
+                        inventoryData.gold = characterData.gold || 0;
+                        updateInventoryDisplay();
+                    })
+                    .catch(error => {
+                        console.error('Error loading character data:', error);
+                    });
+            })
+            .catch(error => {
+                console.error('Error loading inventory data:', error);
+            });
     }
     
-    /**
-     * Hide inventory panel
-     */
-    hide() {
-        if (!this.isOpen) return;
-        
-        // Play close sound
-        if (this.game.audioManager) {
-            this.game.audioManager.playUISound('close');
+    // Update inventory display
+    function updateInventoryDisplay() {
+        // Update capacity and gold
+        if (capacityDisplay) {
+            capacityDisplay.textContent = `${inventoryData.capacity.used}/${inventoryData.capacity.max}`;
         }
         
-        // Hide panel
-        this.panel.classList.add('hidden');
-        this.isOpen = false;
+        if (goldDisplay) {
+            goldDisplay.textContent = inventoryData.gold;
+        }
+        
+        // Clear inventory grid
+        if (inventoryGrid) {
+            inventoryGrid.innerHTML = '';
+            
+            // Filter items by active tab
+            const filteredItems = filterItemsByTab(inventoryData.items, activeTab);
+            
+            // Add items to grid
+            filteredItems.forEach(item => {
+                const itemElement = createItemElement(item);
+                inventoryGrid.appendChild(itemElement);
+            });
+        }
+    }
+    
+    // Filter items by tab
+    function filterItemsByTab(items, tab) {
+        if (tab === 'all') {
+            return items;
+        }
+        
+        return items.filter(item => {
+            switch (tab) {
+                case 'weapons':
+                    return item.item_type === 'weapon';
+                case 'armor':
+                    return item.item_type === 'armor';
+                case 'consumables':
+                    return item.item_type === 'consumable';
+                case 'quest':
+                    return item.item_type === 'quest';
+                case 'misc':
+                    return !['weapon', 'armor', 'consumable', 'quest'].includes(item.item_type);
+                default:
+                    return true;
+            }
+        });
+    }
+    
+    // Create item element
+    function createItemElement(item) {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'inventory-item';
+        itemElement.setAttribute('data-item-id', item.id);
+        itemElement.setAttribute('data-item-type', item.item_type);
+        
+        // Item icon
+        const iconElement = document.createElement('div');
+        iconElement.className = 'item-icon';
+        // Set icon position based on item ID or other property
+        iconElement.style.backgroundPosition = `${(item.id % 10) * -40}px ${Math.floor(item.id / 10) * -40}px`;
+        
+        // Item name
+        const nameElement = document.createElement('div');
+        nameElement.className = 'item-name';
+        nameElement.textContent = item.name;
+        
+        // Add rarity indicator if available
+        if (item.rarity) {
+            itemElement.classList.add(`rarity-${item.rarity}`);
+            
+            // Add border color based on rarity
+            switch (item.rarity) {
+                case 'uncommon':
+                    itemElement.style.borderColor = '#2e7d32';
+                    break;
+                case 'rare':
+                    itemElement.style.borderColor = '#1565c0';
+                    break;
+                case 'epic':
+                    itemElement.style.borderColor = '#6a1b9a';
+                    break;
+                case 'legendary':
+                    itemElement.style.borderColor = '#ff6f00';
+                    break;
+            }
+        }
+        
+        // Item actions
+        const actionsElement = document.createElement('div');
+        actionsElement.className = 'item-actions';
+        
+        // Action buttons based on item type
+        if (item.item_type === 'consumable') {
+            const useButton = document.createElement('button');
+            useButton.className = 'item-action-btn use-btn';
+            useButton.textContent = 'Use';
+            useButton.setAttribute('data-action', 'use');
+            useButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                useItem(item.id);
+            });
+            actionsElement.appendChild(useButton);
+        } else if (item.item_type === 'weapon' || item.item_type === 'armor') {
+            const equipButton = document.createElement('button');
+            equipButton.className = 'item-action-btn use-btn';
+            equipButton.textContent = 'Equip';
+            equipButton.setAttribute('data-action', 'equip');
+            equipButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                equipItem(item.id);
+            });
+            actionsElement.appendChild(equipButton);
+        }
+        
+        // Info button for all items
+        const infoButton = document.createElement('button');
+        infoButton.className = 'item-action-btn info-btn';
+        infoButton.textContent = 'Info';
+        infoButton.setAttribute('data-action', 'info');
+        infoButton.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showItemDetails(item);
+        });
+        actionsElement.appendChild(infoButton);
+        
+        // Assemble item element
+        itemElement.appendChild(iconElement);
+        itemElement.appendChild(nameElement);
+        itemElement.appendChild(actionsElement);
+        
+        // Add tooltip with item info
+        const tooltipElement = document.createElement('div');
+        tooltipElement.className = 'item-tooltip';
+        
+        const tooltipTitle = document.createElement('h4');
+        tooltipTitle.textContent = item.name;
+        tooltipElement.appendChild(tooltipTitle);
+        
+        if (item.rarity) {
+            const rarityElement = document.createElement('p');
+            rarityElement.className = `item-rarity ${item.rarity}`;
+            rarityElement.textContent = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
+            tooltipElement.appendChild(rarityElement);
+        }
+        
+        const descElement = document.createElement('p');
+        descElement.textContent = item.description;
+        tooltipElement.appendChild(descElement);
+        
+        // Add item properties if available
+        if (item.properties) {
+            let properties;
+            
+            try {
+                // Try to parse JSON string
+                properties = typeof item.properties === 'string' ? 
+                    JSON.parse(item.properties) : item.properties;
+            } catch (e) {
+                properties = item.properties;
+            }
+            
+            if (properties && typeof properties === 'object') {
+                const propsElement = document.createElement('div');
+                propsElement.className = 'item-properties';
+                
+                for (const [key, value] of Object.entries(properties)) {
+                    if (key === 'value') {
+                        const propElement = document.createElement('div');
+                        propElement.className = 'item-property';
+                        propElement.textContent = `Value: ${value} gold`;
+                        propsElement.appendChild(propElement);
+                    } else if (key === 'damage') {
+                        const propElement = document.createElement('div');
+                        propElement.className = 'item-property';
+                        propElement.textContent = `Damage: ${value}`;
+                        propsElement.appendChild(propElement);
+                    } else if (key === 'defense') {
+                        const propElement = document.createElement('div');
+                        propElement.className = 'item-property';
+                        propElement.textContent = `Defense: ${value}`;
+                        propsElement.appendChild(propElement);
+                    } else if (key === 'durability') {
+                        const propElement = document.createElement('div');
+                        propElement.className = 'item-property';
+                        propElement.textContent = `Durability: ${value}/${properties.max_durability || value}`;
+                        propsElement.appendChild(propElement);
+                    } else if (key === 'restore_health') {
+                        const propElement = document.createElement('div');
+                        propElement.className = 'item-property';
+                        propElement.textContent = `Restores ${value} Health`;
+                        propsElement.appendChild(propElement);
+                    } else if (key === 'restore_mana') {
+                        const propElement = document.createElement('div');
+                        propElement.className = 'item-property';
+                        propElement.textContent = `Restores ${value} Mana`;
+                        propsElement.appendChild(propElement);
+                    }
+                }
+                
+                tooltipElement.appendChild(propsElement);
+            }
+        }
+        
+        itemElement.appendChild(tooltipElement);
+        
+        // Add click handler for item
+        itemElement.addEventListener('click', () => {
+            showItemDetails(item);
+        });
+        
+        return itemElement;
+    }
+    
+    // Show item details panel
+    function showItemDetails(item) {
+        if (!itemDetailsPanel) return;
         
         // Clear details panel
-        this.detailsEl.style.display = 'none';
+        itemDetailsPanel.innerHTML = '';
         
-        // Restore previous game state
-        this.game.state = this.previousGameState || 'running';
-    }
-    
-    /**
-     * Toggle inventory panel
-     */
-    toggle() {
-        if (this.isOpen) {
-            this.hide();
-        } else {
-            this.show();
+        // Create item details content
+        const titleElement = document.createElement('h3');
+        titleElement.textContent = item.name;
+        
+        if (item.rarity) {
+            const rarityElement = document.createElement('div');
+            rarityElement.className = `item-rarity ${item.rarity}`;
+            rarityElement.textContent = item.rarity.charAt(0).toUpperCase() + item.rarity.slice(1);
+            titleElement.appendChild(rarityElement);
         }
-    }
-    
-    /**
-     * Load inventory items from player
-     */
-    loadItems() {
-        // Clear current items
-        this.items = [];
         
-        // Load items from player
-        if (this.game.player && this.game.player.inventory) {
-            this.items = this.game.player.inventory;
+        const descElement = document.createElement('p');
+        descElement.textContent = item.description;
+        
+        // Add item properties if available
+        const propsElement = document.createElement('div');
+        propsElement.className = 'item-properties';
+        
+        if (item.properties) {
+            let properties;
             
-            // Update capacity display
-            this.capacityEl.textContent = `${this.items.length}/${this.game.player.maxInventorySlots || 20}`;
-            
-            // Update gold display
-            this.goldEl.textContent = this.game.player.gold || 0;
-            
-            // Apply current filter
-            this.filterItems();
-        }
-    }
-    
-    /**
-     * Filter items based on current tab
-     */
-    filterItems() {
-        // Clear grid
-        this.grid.innerHTML = '';
-        
-        // Filter items
-        let filteredItems = [];
-        
-        if (this.currentTab === 'all') {
-            filteredItems = this.items;
-        } else {
-            filteredItems = this.items.filter(item => item.item_type === this.currentTab);
-        }
-        
-        // Create item elements
-        filteredItems.forEach(item => {
-            this.createItemElement(item);
-        });
-    }
-    
-    /**
-     * Create an item element in the grid
-     */
-    createItemElement(item) {
-        const itemTemplate = document.getElementById('itemTemplate');
-        if (!itemTemplate) return;
-        
-        const itemElement = itemTemplate.content.cloneNode(true).children[0];
-        
-        // Set item data
-        itemElement.dataset.itemId = item.id;
-        
-        // Set item name with rarity color
-        const nameElement = itemElement.querySelector('.item-name');
-        nameElement.textContent = item.name;
-        nameElement.style.color = this.getRarityColor(item.rarity);
-        
-        // Set icon based on item type/sprite
-        const iconElement = itemElement.querySelector('.item-icon');
-        
-        // Use icon if available, otherwise use default based on type
-        if (item.icon) {
-            iconElement.style.backgroundImage = `url(${item.icon})`;
-        } else {
-            // Default icon positions based on item type
-            const iconPositions = {
-                'weapon': '0 0',
-                'armor': '-40px 0',
-                'consumable': '-80px 0',
-                'quest': '-120px 0',
-                'misc': '-160px 0'
-            };
-            
-            iconElement.style.backgroundImage = `url('/static/assets/sprites/item_icons.png')`;
-            iconElement.style.backgroundPosition = iconPositions[item.item_type] || '0 0';
-        }
-        
-        // Add quantity badge if stackable
-        if (item.quantity && item.quantity > 1) {
-            const quantityBadge = document.createElement('div');
-            quantityBadge.className = 'item-quantity';
-            quantityBadge.textContent = item.quantity;
-            itemElement.appendChild(quantityBadge);
-        }
-        
-        // Add equipped indicator if equipped
-        if (item.equipped) {
-            const equippedIndicator = document.createElement('div');
-            equippedIndicator.className = 'item-equipped';
-            equippedIndicator.textContent = 'E';
-            itemElement.appendChild(equippedIndicator);
-        }
-        
-        // Add click handler
-        itemElement.addEventListener('click', () => {
-            this.showItemDetails(item);
-        });
-        
-        // Add to grid
-        this.grid.appendChild(itemElement);
-    }
-    
-    /**
-     * Show item details in the details panel
-     */
-    showItemDetails(item) {
-        // Update selected item
-        this.selectedItem = item;
-        
-        // Create details content
-        let detailsHTML = `
-            <h3 style="color: ${this.getRarityColor(item.rarity)};">${item.name}</h3>
-            <p class="item-type">${this.formatItemType(item.item_type, item.subtype)} (${item.rarity})</p>
-            <p class="item-description">${item.description || 'No description available.'}</p>
-        `;
-        
-        // Add properties based on item type
-        const properties = item.properties || {};
-        
-        if (item.item_type === 'weapon') {
-            detailsHTML += `
-                <div class="item-property">
-                    <span class="property-name">Damage:</span>
-                    <span class="property-value">${properties.damage || 0}</span>
-                </div>
-            `;
-            
-            // Add other weapon properties
-            if (properties.crit_chance) {
-                detailsHTML += `
-                    <div class="item-property">
-                        <span class="property-name">Critical Chance:</span>
-                        <span class="property-value">${properties.crit_chance}%</span>
-                    </div>
-                `;
+            try {
+                // Try to parse JSON string
+                properties = typeof item.properties === 'string' ? 
+                    JSON.parse(item.properties) : item.properties;
+            } catch (e) {
+                properties = item.properties;
             }
             
-            if (properties.attack_speed) {
-                detailsHTML += `
-                    <div class="item-property">
-                        <span class="property-name">Attack Speed:</span>
-                        <span class="property-value">${properties.attack_speed}</span>
-                    </div>
-                `;
-            }
-        } 
-        else if (item.item_type === 'armor') {
-            detailsHTML += `
-                <div class="item-property">
-                    <span class="property-name">Defense:</span>
-                    <span class="property-value">${properties.defense || 0}</span>
-                </div>
-            `;
-            
-            // Add other armor properties
-            if (properties.magic_resist) {
-                detailsHTML += `
-                    <div class="item-property">
-                        <span class="property-name">Magic Resist:</span>
-                        <span class="property-value">${properties.magic_resist}</span>
-                    </div>
-                `;
-            }
-        } 
-        else if (item.item_type === 'consumable') {
-            // Add effect description
-            if (properties.restore_health) {
-                detailsHTML += `
-                    <div class="item-property">
-                        <span class="property-name">Restores Health:</span>
-                        <span class="property-value">${properties.restore_health}</span>
-                    </div>
-                `;
-            }
-            
-            if (properties.restore_mana) {
-                detailsHTML += `
-                    <div class="item-property">
-                        <span class="property-name">Restores Mana:</span>
-                        <span class="property-value">${properties.restore_mana}</span>
-                    </div>
-                `;
-            }
-            
-            if (properties.buff) {
-                detailsHTML += `
-                    <div class="item-property">
-                        <span class="property-name">Buff:</span>
-                        <span class="property-value">${properties.buff} (${properties.duration || 60}s)</span>
-                    </div>
-                `;
+            if (properties && typeof properties === 'object') {
+                for (const [key, value] of Object.entries(properties)) {
+                    if (['value', 'damage', 'defense', 'durability', 'restore_health', 'restore_mana'].includes(key)) {
+                        const propElement = document.createElement('div');
+                        propElement.className = 'item-property';
+                        
+                        let propName, propValue;
+                        
+                        switch (key) {
+                            case 'value':
+                                propName = 'Value';
+                                propValue = `${value} gold`;
+                                break;
+                            case 'damage':
+                                propName = 'Damage';
+                                propValue = value;
+                                break;
+                            case 'defense':
+                                propName = 'Defense';
+                                propValue = value;
+                                break;
+                            case 'durability':
+                                propName = 'Durability';
+                                propValue = `${value}/${properties.max_durability || value}`;
+                                break;
+                            case 'restore_health':
+                                propName = 'Restores Health';
+                                propValue = value;
+                                break;
+                            case 'restore_mana':
+                                propName = 'Restores Mana';
+                                propValue = value;
+                                break;
+                        }
+                        
+                        propElement.textContent = `${propName}: ${propValue}`;
+                        propsElement.appendChild(propElement);
+                    }
+                }
             }
         }
-        
-        // Add common properties
-        if (properties.durability !== undefined && properties.max_durability !== undefined) {
-            const durabilityPercent = (properties.durability / properties.max_durability) * 100;
-            const durabilityColor = durabilityPercent < 20 ? '#e74c3c' : 
-                                    durabilityPercent < 50 ? '#f39c12' : '#2ecc71';
-            
-            detailsHTML += `
-                <div class="item-property">
-                    <span class="property-name">Durability:</span>
-                    <span class="property-value" style="color: ${durabilityColor};">
-                        ${properties.durability}/${properties.max_durability}
-                    </span>
-                </div>
-            `;
-        }
-        
-        if (properties.level_req) {
-            detailsHTML += `
-                <div class="item-property">
-                    <span class="property-name">Required Level:</span>
-                    <span class="property-value">${properties.level_req}</span>
-                </div>
-            `;
-        }
-        
-        // Add value
-        detailsHTML += `
-            <div class="item-property">
-                <span class="property-name">Value:</span>
-                <span class="property-value">${properties.value || 0} gold</span>
-            </div>
-        `;
         
         // Add action buttons
-        detailsHTML += `<div class="item-actions">`;
+        const actionsElement = document.createElement('div');
+        actionsElement.className = 'item-actions';
         
-        // Use button for usable items
-        if (item.usable) {
-            detailsHTML += `<button class="item-action-btn use-btn">Use</button>`;
+        // Add actions based on item type
+        if (item.item_type === 'consumable') {
+            const useButton = document.createElement('button');
+            useButton.className = 'btn btn-primary';
+            useButton.textContent = 'Use';
+            useButton.addEventListener('click', () => {
+                useItem(item.id);
+            });
+            actionsElement.appendChild(useButton);
+        } else if (item.item_type === 'weapon' || item.item_type === 'armor') {
+            const equipButton = document.createElement('button');
+            equipButton.className = 'btn btn-primary';
+            equipButton.textContent = 'Equip';
+            equipButton.addEventListener('click', () => {
+                equipItem(item.id);
+            });
+            actionsElement.appendChild(equipButton);
         }
         
-        // Equip/Unequip button for equipable items
-        if (item.equipable) {
-            if (item.equipped) {
-                detailsHTML += `<button class="item-action-btn unequip-btn">Unequip</button>`;
-            } else {
-                detailsHTML += `<button class="item-action-btn equip-btn">Equip</button>`;
+        // Add drop button for all items
+        const dropButton = document.createElement('button');
+        dropButton.className = 'btn btn-danger';
+        dropButton.textContent = 'Drop';
+        dropButton.addEventListener('click', () => {
+            dropItem(item.id);
+        });
+        actionsElement.appendChild(dropButton);
+        
+        // Assemble details panel
+        itemDetailsPanel.appendChild(titleElement);
+        itemDetailsPanel.appendChild(descElement);
+        itemDetailsPanel.appendChild(propsElement);
+        itemDetailsPanel.appendChild(actionsElement);
+    }
+    
+    // Use item
+    function useItem(itemId) {
+        fetch(`/api/item/${itemId}/use`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
             }
-        }
-        
-        // Drop button (except for quest items)
-        if (item.item_type !== 'quest') {
-            detailsHTML += `<button class="item-action-btn drop-btn">Drop</button>`;
-        }
-        
-        detailsHTML += `</div>`;
-        
-        // Update details element
-        this.detailsEl.innerHTML = detailsHTML;
-        this.detailsEl.style.display = 'block';
-        
-        // Add event listeners to buttons
-        this.setupActionButtons(item);
-        
-        // Play select sound
-        if (this.game.audioManager) {
-            this.game.audioManager.playUISound('click');
-        }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show notification
+                showNotification(data.message, 'success');
+                
+                // Refresh inventory after short delay
+                setTimeout(() => {
+                    loadInventoryData();
+                }, 500);
+            } else {
+                showNotification(data.message || 'Failed to use item', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error using item:', error);
+            showNotification('Error using item', 'error');
+        });
     }
     
-    /**
-     * Set up action buttons for an item
-     */
-    setupActionButtons(item) {
-        // Use button
-        const useBtn = this.detailsEl.querySelector('.use-btn');
-        if (useBtn) {
-            useBtn.addEventListener('click', () => {
-                this.useItem(item);
-            });
-        }
-        
-        // Equip button
-        const equipBtn = this.detailsEl.querySelector('.equip-btn');
-        if (equipBtn) {
-            equipBtn.addEventListener('click', () => {
-                this.equipItem(item);
-            });
-        }
-        
-        // Unequip button
-        const unequipBtn = this.detailsEl.querySelector('.unequip-btn');
-        if (unequipBtn) {
-            unequipBtn.addEventListener('click', () => {
-                this.unequipItem(item);
-            });
-        }
-        
-        // Drop button
-        const dropBtn = this.detailsEl.querySelector('.drop-btn');
-        if (dropBtn) {
-            dropBtn.addEventListener('click', () => {
-                this.dropItem(item);
-            });
-        }
+    // Equip item
+    function equipItem(itemId) {
+        fetch(`/api/item/${itemId}/equip`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show notification
+                showNotification(data.message, 'success');
+                
+                // Refresh inventory after short delay
+                setTimeout(() => {
+                    loadInventoryData();
+                }, 500);
+            } else {
+                showNotification(data.message || 'Failed to equip item', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error equipping item:', error);
+            showNotification('Error equipping item', 'error');
+        });
     }
     
-    /**
-     * Use an item
-     */
-    useItem(item) {
-        // Call item's use method
-        if (this.game.player) {
-            const result = this.game.player.useItem(item.id);
+    // Drop item
+    function dropItem(itemId) {
+        // Confirm before dropping
+        if (!confirm('Are you sure you want to drop this item? This action cannot be undone.')) {
+            return;
+        }
+        
+        fetch(`/api/item/${itemId}/drop`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show notification
+                showNotification(data.message, 'success');
+                
+                // Refresh inventory after short delay
+                setTimeout(() => {
+                    loadInventoryData();
+                }, 500);
+            } else {
+                showNotification(data.message || 'Failed to drop item', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error dropping item:', error);
+            showNotification('Error dropping item', 'error');
+        });
+    }
+    
+    // Set active tab
+    function setActiveTab(tab) {
+        activeTab = tab;
+        
+        // Update tab buttons
+        const tabButtons = document.querySelectorAll('.inventory-panel .tab-button');
+        tabButtons.forEach(button => {
+            if (button.getAttribute('data-tab') === tab) {
+                button.classList.add('active');
+            } else {
+                button.classList.remove('active');
+            }
+        });
+        
+        // Update inventory display
+        updateInventoryDisplay();
+    }
+    
+    // Show notification
+    function showNotification(message, type = 'info') {
+        const notificationElement = document.createElement('div');
+        notificationElement.className = `notification ${type}`;
+        notificationElement.textContent = message;
+        
+        // Add close button
+        const closeButton = document.createElement('button');
+        closeButton.className = 'close-notification';
+        closeButton.innerHTML = '&times;';
+        closeButton.addEventListener('click', () => {
+            notificationElement.style.display = 'none';
+        });
+        
+        notificationElement.appendChild(closeButton);
+        
+        // Add to notifications container
+        const notificationsContainer = document.querySelector('.notifications');
+        if (notificationsContainer) {
+            notificationsContainer.appendChild(notificationElement);
             
-            if (result.success) {
-                // Show result in game log
-                this.game.addEvent(result.message);
-                
-                // Play sound
-                if (this.game.audioManager) {
-                    this.game.audioManager.playSound('potion_use');
-                }
-                
-                // Reload inventory
-                this.loadItems();
-                
-                // Clear details if item is gone
-                if (result.consumed) {
-                    this.detailsEl.style.display = 'none';
-                }
-            } else {
-                // Show error
-                this.game.addEvent(result.message);
-                
-                // Play error sound
-                if (this.game.audioManager) {
-                    this.game.audioManager.playUISound('error');
-                }
-            }
+            // Auto-hide after 5 seconds
+            setTimeout(() => {
+                notificationElement.style.opacity = '0';
+                setTimeout(() => {
+                    notificationElement.remove();
+                }, 500);
+            }, 5000);
         }
     }
     
-    /**
-     * Equip an item
-     */
-    equipItem(item) {
-        // Call item's equip method
-        if (this.game.player) {
-            const result = this.game.player.equipItem(item.id);
+    // Show inventory
+    function showInventory() {
+        if (inventoryPanel) {
+            inventoryPanel.classList.remove('hidden');
             
-            if (result.success) {
-                // Show result in game log
-                this.game.addEvent(result.message);
-                
-                // Play sound
-                if (this.game.audioManager) {
-                    this.game.audioManager.playSound('item_equip');
-                }
-                
-                // Reload inventory
-                this.loadItems();
-            } else {
-                // Show error
-                this.game.addEvent(result.message);
-                
-                // Play error sound
-                if (this.game.audioManager) {
-                    this.game.audioManager.playUISound('error');
-                }
-            }
+            // Refresh inventory data
+            loadInventoryData();
         }
     }
     
-    /**
-     * Unequip an item
-     */
-    unequipItem(item) {
-        // Call item's unequip method
-        if (this.game.player) {
-            const result = this.game.player.unequipItem(item.id);
-            
-            if (result.success) {
-                // Show result in game log
-                this.game.addEvent(result.message);
-                
-                // Play sound
-                if (this.game.audioManager) {
-                    this.game.audioManager.playSound('item_unequip');
-                }
-                
-                // Reload inventory
-                this.loadItems();
-            } else {
-                // Show error
-                this.game.addEvent(result.message);
-                
-                // Play error sound
-                if (this.game.audioManager) {
-                    this.game.audioManager.playUISound('error');
-                }
-            }
+    // Hide inventory
+    function hideInventory() {
+        if (inventoryPanel) {
+            inventoryPanel.classList.add('hidden');
         }
     }
     
-    /**
-     * Drop an item
-     */
-    dropItem(item) {
-        // Confirm drop
-        if (confirm(`Are you sure you want to drop ${item.name}?`)) {
-            // Call player's drop method
-            if (this.game.player) {
-                const result = this.game.player.dropItem(item.id);
-                
-                if (result.success) {
-                    // Show result in game log
-                    this.game.addEvent(result.message);
-                    
-                    // Play sound
-                    if (this.game.audioManager) {
-                        this.game.audioManager.playSound('item_drop');
-                    }
-                    
-                    // Reload inventory
-                    this.loadItems();
-                    
-                    // Clear details
-                    this.detailsEl.style.display = 'none';
-                } else {
-                    // Show error
-                    this.game.addEvent(result.message);
-                    
-                    // Play error sound
-                    if (this.game.audioManager) {
-                        this.game.audioManager.playUISound('error');
-                    }
-                }
-            }
+    // Toggle inventory visibility
+    function toggleInventory() {
+        if (isInventoryVisible()) {
+            hideInventory();
+        } else {
+            showInventory();
         }
     }
     
-    /**
-     * Get color based on item rarity
-     */
-    getRarityColor(rarity) {
-        const rarityColors = {
-            'common': '#AAAAAA',
-            'uncommon': '#00AA00',
-            'rare': '#0055FF',
-            'epic': '#AA00FF',
-            'legendary': '#FFAA00'
-        };
-        
-        return rarityColors[rarity] || rarityColors.common;
+    // Check if inventory is visible
+    function isInventoryVisible() {
+        return inventoryPanel && !inventoryPanel.classList.contains('hidden');
     }
     
-    /**
-     * Format item type and subtype for display
-     */
-    formatItemType(type, subtype) {
-        let formattedType = type.charAt(0).toUpperCase() + type.slice(1);
-        
-        if (subtype) {
-            formattedType += ` (${subtype.charAt(0).toUpperCase() + subtype.slice(1)})`;
-        }
-        
-        return formattedType;
-    }
-}
-
-// Export for use in main game
-window.InventoryUI = InventoryUI;
+    // Expose public API
+    window.GameInventory = {
+        init,
+        showInventory,
+        hideInventory,
+        toggleInventory,
+        isInventoryVisible,
+        loadInventoryData
+    };
+})();

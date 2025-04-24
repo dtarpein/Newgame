@@ -1,0 +1,216 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Fantasy RPG Adventure{% endblock %}
+
+{% block content %}
+<div class="landing-page">
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1>Welcome to Realm Weaver</h1>
+            <p>Embark on an epic journey through a world of magic, adventure, and intrigue.</p>
+            
+            {% if current_user.is_authenticated %}
+                <div class="hero-buttons">
+                    <a href="{{ url_for('game.game_home') }}" class="btn btn-primary btn-large">Continue Adventure</a>
+                    <a href="{{ url_for('character.character_select') }}" class="btn btn-outline btn-large">Character Selection</a>
+                </div>
+            {% else %}
+                <div class="hero-buttons">
+                    <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-large">Begin Your Journey</a>
+                    <a href="{{ url_for('auth.login') }}" class="btn btn-outline btn-large">Return to the Realm</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="features-section">
+        <h2>Discover the Realm</h2>
+        
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon" style="background-position: 0 0;"></div>
+                <h3>Create Your Hero</h3>
+                <p>Choose from multiple character classes, each with unique abilities and play styles.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon" style="background-position: -100px 0;"></div>
+                <h3>Explore a Living World</h3>
+                <p>Travel through diverse regions with dynamic weather and day/night cycles.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon" style="background-position: -200px 0;"></div>
+                <h3>Epic Quests</h3>
+                <p>Embark on adventures that will test your skills and shape the world around you.</p>
+            </div>
+            
+            <div class="feature-card">
+                <div class="feature-icon" style="background-position: -300px 0;"></div>
+                <h3>Build Your Legacy</h3>
+                <p>Forge relationships with NPCs, collect legendary items, and leave your mark on the Realm.</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Begin?</h2>
+            <p>Create an account now and start weaving your own tale in the Realm.</p>
+            <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-large">Create Account</a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .landing-page {
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    
+    .hero-section {
+        background-image: url('/static/assets/images/hero-bg.jpg');
+        background-size: cover;
+        background-position: center;
+        min-height: 500px;
+        display: flex;
+        align-items: center;
+        padding: 40px 20px;
+        color: white;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+        position: relative;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(to right, rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.3));
+    }
+    
+    .hero-content {
+        max-width: 800px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+        text-align: center;
+    }
+    
+    .hero-content h1 {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        font-family: 'MedievalSharp', cursive;
+    }
+    
+    .hero-content p {
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+    }
+    
+    .hero-buttons {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+    }
+    
+    .btn-large {
+        padding: 12px 24px;
+        font-size: 1.1rem;
+    }
+    
+    .features-section {
+        padding: 80px 20px;
+        text-align: center;
+        background-color: #f8f8f8;
+    }
+    
+    .features-section h2 {
+        margin-bottom: 3rem;
+        font-family: 'MedievalSharp', cursive;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .feature-card {
+        background-color: white;
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 1.5rem;
+        background-image: url('/static/assets/sprites/feature_icons.png');
+        background-repeat: no-repeat;
+    }
+    
+    .cta-section {
+        background-image: url('/static/assets/images/cta-bg.jpg');
+        background-size: cover;
+        background-position: center;
+        padding: 80px 20px;
+        color: white;
+        text-align: center;
+        position: relative;
+    }
+    
+    .cta-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(0, 0, 0, 0.5);
+    }
+    
+    .cta-content {
+        position: relative;
+        z-index: 1;
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .cta-content h2 {
+        font-family: 'MedievalSharp', cursive;
+        margin-bottom: 1rem;
+    }
+    
+    .cta-content p {
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .hero-content h1 {
+            font-size: 2.5rem;
+        }
+        
+        .hero-buttons {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .btn-large {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+</style>
+{% endblock %}

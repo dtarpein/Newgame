@@ -1,408 +1,190 @@
-/**
- * Input Manager
- * Handles keyboard, mouse, and touch inputs
- */
-class InputManager {
-    constructor(game) {
-        this.game = game;
-        this.canvas = game.canvas;
+// Input handling module for Realm Weaver
+// This module handles keyboard and mouse input for the game
+
+(function() {
+    // Key state tracking
+    const keyState = {};
+    
+    // Initialize input handling
+    function init() {
+        // Add event listeners for keyboard
+        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener('keyup', handleKeyUp);
         
-        // Track key states
-        this.keys = {};
-        
-        // Track mouse position and state
-        this.mousePosition = { x: 0, y: 0 };
-        this.mouseWorldPosition = { x: 0, y: 0 };
-        this.mouseButtons = { left: false, middle: false, right: false };
-        this.mouseWheelDelta = 0;
-        
-        // Track touch state
-        this.touches = [];
-        this.touchStartPosition = null;
-        this.touchCurrentPosition = null;
-        this.pinchDistance = 0;
-        this.isPinching = false;
-        
-        // Bind event handlers
-        this.bindEvents();
+        console.log('Input system initialized');
+        return true;
     }
     
-    /**
-     * Attach event listeners
-     */
-    bindEvents() {
-        // Keyboard events
-        window.addEventListener('keydown', this.handleKeyDown.bind(this));
-        window.addEventListener('keyup', this.handleKeyUp.bind(this));
+    // Handle key down event
+    function handleKeyDown(event) {
+        keyState[event.key] = true;
         
-        // Mouse events
-        this.canvas.addEventListener('mousemove', this.handleMouseMove.bind(this));
-        this.canvas.addEventListener('mousedown', this.handleMouseDown.bind(this));
-        this.canvas.addEventListener('mouseup', this.handleMouseUp.bind(this));
-        this.canvas.addEventListener('wheel', this.handleMouseWheel.bind(this));
-        this.canvas.addEventListener('contextmenu', this.handleContextMenu.bind(this));
-        
-        // Touch events for mobile
-        this.canvas.addEventListener('touchstart', this.handleTouchStart.bind(this));
-        this.canvas.addEventListener('touchmove', this.handleTouchMove.bind(this));
-        this.canvas.addEventListener('touchend', this.handleTouchEnd.bind(this));
-        
-        // Prevent scrolling when touching the canvas
-        this.canvas.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-        
-        // Handle losing focus
-        window.addEventListener('blur', this.handleBlur.bind(this));
+        // Handle movement keys
+        switch(event.key) {
+            case 'ArrowUp':
+            case 'w':
+                movePlayer(0, -1);
+                event.preventDefault();
+                break;
+            case 'ArrowDown':
+            case 's':
+                movePlayer(0, 1);
+                event.preventDefault();
+                break;
+            case 'ArrowLeft':
+            case 'a':
+                movePlayer(-1, 0);
+                event.preventDefault();
+                break;
+            case 'ArrowRight':
+            case 'd':
+                movePlayer(1, 0);
+                event.preventDefault();
+                break;
+            case 'm':
+                // Toggle map
+                if (typeof Game !== 'undefined' && Game.toggleMap) {
+                    Game.toggleMap();
+                }
+                break;
+            case 'e':
+                // Interact
+                if (typeof Game !== 'undefined' && Game.interact) {
+                    Game.interact();
+                }
+                break;
+            case 'r':
+                // Rest
+                if (typeof Game !== 'undefined' && Game.restCharacter) {
+                    Game.restCharacter();
+                }
+                break;
+            case ' ':
+                // Explore
+                if (typeof Game !== 'undefined' && Game.startExploration) {
+                    Game.startExploration();
+                }
+                event.preventDefault();
+                break;
+        }
     }
     
-    /**
-     * Handle key down events
-     */
-    handleKeyDown(e) {
-        this.keys[e.key] = true;
-        
-        // Prevent default action for movement keys and space
-        if (['w', 'a', 's', 'd', 'ArrowUp', 'ArrowLeft', 'ArrowDown', 'ArrowRight', ' '].includes(e.key)) {
-            e.preventDefault();
+    // Handle key up event
+    function handleKeyUp(event) {
+        keyState[event.key] = false;
+    }
+    
+    // Move player character
+    function movePlayer(dx, dy) {
+        // Check if Game object exists
+        if (typeof Game === 'undefined') {
+            console.error('Game object not found');
+            return;
         }
         
-        // Notify game of key change
-        this.game.onInputChange({
-            type: 'keydown',
-            key: e.key,
-            movementDirection: this.getMovementDirection()
+        // Get current position
+        const position = { ...Game.state.characterPosition };
+        
+        // Calculate new position
+        position.x += dx;
+        position.y += dy;
+        
+        // Update character facing direction
+        if (dx > 0) {
+            Game.state.entities[0].sprite.facing = 'right';
+        } else if (dx < 0) {
+            Game.state.entities[0].sprite.facing = 'left';
+        } else if (dy > 0) {
+            Game.state.entities[0].sprite.facing = 'down';
+        } else if (dy < 0) {
+            Game.state.entities[0].sprite.facing = 'up';
+        }
+        
+        // Check for collisions
+        if (!checkCollision(position)) {
+            // Update position if no collisions
+            Game.state.characterPosition = position;
+            Game.state.entities[0].position = position;
+            
+            // Send position update to server
+            updatePositionOnServer(position);
+        }
+    }
+    
+    // Check for collisions
+    function checkCollision(position) {
+        // Check map boundaries
+        if (position.x < 0 || position.y < 0 || 
+            position.x >= Game.state.mapData.width || 
+            position.y >= Game.state.mapData.height) {
+            return true;
+        }
+        
+        // Check terrain collisions
+        const tile = Game.state.mapData.tiles[position.y][position.x];
+        const blockedTiles = ['water', 'mountain', 'wall'];
+        
+        if (blockedTiles.includes(tile)) {
+            return true;
+        }
+        
+        // Check entity collisions (NPCs, etc.)
+        for (const entity of Game.state.entities) {
+            if (entity.id !== 'player' && 
+                entity.position.x === position.x && 
+                entity.position.y === position.y) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    // Update position on server
+    function updatePositionOnServer(position) {
+        // Check if we have the region ID
+        if (!Game.state.regionData || !Game.state.regionData.id) {
+            return;
+        }
+        
+        // Send position update
+        fetch('/api/move', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                x: position.x,
+                y: position.y,
+                region_id: Game.state.regionData.id
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Check for new discoveries
+            if (data.discoveries && data.discoveries.length > 0) {
+                data.discoveries.forEach(discovery => {
+                    // Add discovery message to event log
+                    if (typeof Game !== 'undefined' && 
+                        typeof Game.addEventMessage === 'function') {
+                        Game.addEventMessage(`Discovered: ${discovery.name}`);
+                    }
+                });
+            }
+        })
+        .catch(error => {
+            console.error('Error updating position:', error);
         });
     }
     
-    /**
-     * Handle key up events
-     */
-    handleKeyUp(e) {
-        this.keys[e.key] = false;
-        
-        // Notify game of key change
-        this.game.onInputChange({
-            type: 'keyup',
-            key: e.key,
-            movementDirection: this.getMovementDirection()
-        });
+    // Check if a key is currently pressed
+    function isKeyPressed(key) {
+        return keyState[key] === true;
     }
     
-    /**
-     * Calculate movement direction based on currently pressed keys
-     */
-    getMovementDirection() {
-        let dx = 0;
-        let dy = 0;
-        
-        // WASD or Arrow keys
-        if (this.keys['w'] || this.keys['ArrowUp']) dy -= 1;
-        if (this.keys['s'] || this.keys['ArrowDown']) dy += 1;
-        if (this.keys['a'] || this.keys['ArrowLeft']) dx -= 1;
-        if (this.keys['d'] || this.keys['ArrowRight']) dx += 1;
-        
-        // Normalize for diagonal movement
-        if (dx !== 0 && dy !== 0) {
-            const length = Math.sqrt(dx * dx + dy * dy);
-            dx /= length;
-            dy /= length;
-        }
-        
-        return { x: dx, y: dy };
-    }
-    
-    /**
-     * Handle mouse movement
-     */
-    handleMouseMove(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        
-        // Get mouse position relative to canvas
-        this.mousePosition = {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        };
-        
-        // Convert to world coordinates
-        this.updateMouseWorldPosition();
-        
-        // Notify game of mouse movement
-        this.game.onInputChange({
-            type: 'mousemove',
-            position: this.mousePosition,
-            worldPosition: this.mouseWorldPosition
-        });
-    }
-    
-    /**
-     * Handle mouse button down
-     */
-    handleMouseDown(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        
-        // Update mouse position
-        this.mousePosition = {
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top
-        };
-        
-        // Update world position
-        this.updateMouseWorldPosition();
-        
-        // Set button state
-        switch (e.button) {
-            case 0: this.mouseButtons.left = true; break;
-            case 1: this.mouseButtons.middle = true; break;
-            case 2: this.mouseButtons.right = true; break;
-        }
-        
-        // Notify game of mouse button down
-        this.game.onInputChange({
-            type: 'mousedown',
-            button: e.button,
-            position: this.mousePosition,
-            worldPosition: this.mouseWorldPosition
-        });
-    }
-    
-    /**
-     * Handle mouse button up
-     */
-    handleMouseUp(e) {
-        // Set button state
-        switch (e.button) {
-            case 0: this.mouseButtons.left = false; break;
-            case 1: this.mouseButtons.middle = false; break;
-            case 2: this.mouseButtons.right = false; break;
-        }
-        
-        // Notify game of mouse button up
-        this.game.onInputChange({
-            type: 'mouseup',
-            button: e.button,
-            position: this.mousePosition,
-            worldPosition: this.mouseWorldPosition
-        });
-    }
-    
-    /**
-     * Handle mouse wheel
-     */
-    handleMouseWheel(e) {
-        // Track wheel delta for zooming
-        this.mouseWheelDelta = e.deltaY;
-        
-        // Notify game of mouse wheel
-        this.game.onInputChange({
-            type: 'wheel',
-            deltaY: e.deltaY
-        });
-        
-        // Prevent default scrolling behavior
-        e.preventDefault();
-    }
-    
-    /**
-     * Handle right-click context menu
-     */
-    handleContextMenu(e) {
-        // Prevent default context menu
-        e.preventDefault();
-    }
-    
-    /**
-     * Handle touch start
-     */
-    handleTouchStart(e) {
-        // Store all active touches
-        this.touches = Array.from(e.touches);
-        
-        // Store initial position for first touch
-        if (e.touches.length >= 1) {
-            const rect = this.canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            
-            this.touchStartPosition = {
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-            };
-            
-            this.touchCurrentPosition = { ...this.touchStartPosition };
-            
-            // Convert to world coordinates (for touch position instead of mouse)
-            const worldX = this.game.camera.x + (this.touchCurrentPosition.x - this.canvas.width / 2) / this.game.camera.zoom;
-            const worldY = this.game.camera.y + (this.touchCurrentPosition.y - this.canvas.height / 2) / this.game.camera.zoom;
-            
-            const worldPosition = { x: worldX, y: worldY };
-            
-            // Notify game of touch start (similar to mousedown)
-            this.game.onInputChange({
-                type: 'touchstart',
-                position: this.touchCurrentPosition,
-                worldPosition: worldPosition,
-                touches: this.touches.length
-            });
-        }
-        
-        // Check for pinch gesture
-        if (e.touches.length >= 2) {
-            this.isPinching = true;
-            this.pinchDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-        }
-    }
-    
-    /**
-     * Handle touch move
-     */
-    handleTouchMove(e) {
-        // Store all active touches
-        this.touches = Array.from(e.touches);
-        
-        // Update current position for first touch
-        if (e.touches.length >= 1) {
-            const rect = this.canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            
-            this.touchCurrentPosition = {
-                x: touch.clientX - rect.left,
-                y: touch.clientY - rect.top
-            };
-            
-            // Convert to world coordinates
-            const worldX = this.game.camera.x + (this.touchCurrentPosition.x - this.canvas.width / 2) / this.game.camera.zoom;
-            const worldY = this.game.camera.y + (this.touchCurrentPosition.y - this.canvas.height / 2) / this.game.camera.zoom;
-            
-            const worldPosition = { x: worldX, y: worldY };
-            
-            // Notify game of touch move (similar to mousemove)
-            this.game.onInputChange({
-                type: 'touchmove',
-                position: this.touchCurrentPosition,
-                worldPosition: worldPosition,
-                touches: this.touches.length
-            });
-        }
-        
-        // Handle pinch gesture for zooming
-        if (e.touches.length >= 2 && this.isPinching) {
-            const currentDistance = this.getTouchDistance(e.touches[0], e.touches[1]);
-            const deltaDistance = currentDistance - this.pinchDistance;
-            
-            // Notify game of pinch (for zooming)
-            this.game.onInputChange({
-                type: 'pinch',
-                deltaDistance: deltaDistance
-            });
-            
-            this.pinchDistance = currentDistance;
-        }
-    }
-    
-    /**
-     * Handle touch end
-     */
-    handleTouchEnd(e) {
-        // Reset pinch state if all touches are gone
-        if (e.touches.length < 2) {
-            this.isPinching = false;
-        }
-        
-        // Store remaining touches
-        this.touches = Array.from(e.touches);
-        
-        // Calculate touch duration and distance for tap detection
-        if (this.touchStartPosition && this.touchCurrentPosition) {
-            const dx = this.touchCurrentPosition.x - this.touchStartPosition.x;
-            const dy = this.touchCurrentPosition.y - this.touchStartPosition.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            
-            // Notify game of touch end
-            this.game.onInputChange({
-                type: 'touchend',
-                position: this.touchCurrentPosition,
-                distance: distance,
-                touches: this.touches.length
-            });
-        }
-        
-        // If no touches remain, reset touch positions
-        if (e.touches.length === 0) {
-            this.touchStartPosition = null;
-            this.touchCurrentPosition = null;
-        }
-    }
-    
-    /**
-     * Handle window blur (e.g., switching tabs)
-     */
-    handleBlur() {
-        // Reset all input states when window loses focus
-        this.keys = {};
-        this.mouseButtons = { left: false, middle: false, right: false };
-        
-        // Notify game of reset
-        this.game.onInputChange({
-            type: 'reset'
-        });
-    }
-    
-    /**
-     * Calculate distance between two touch points
-     */
-    getTouchDistance(touch1, touch2) {
-        const dx = touch1.clientX - touch2.clientX;
-        const dy = touch1.clientY - touch2.clientY;
-        return Math.sqrt(dx * dx + dy * dy);
-    }
-    
-    /**
-     * Convert mouse canvas position to world position
-     */
-    updateMouseWorldPosition() {
-        const worldX = this.game.camera.x + (this.mousePosition.x - this.canvas.width / 2) / this.game.camera.zoom;
-        const worldY = this.game.camera.y + (this.mousePosition.y - this.canvas.height / 2) / this.game.camera.zoom;
-        
-        this.mouseWorldPosition = { x: worldX, y: worldY };
-    }
-    
-    /**
-     * Check if a specific key is pressed
-     */
-    isKeyPressed(key) {
-        return !!this.keys[key];
-    }
-    
-    /**
-     * Check if a mouse button is pressed
-     */
-    isMouseButtonPressed(button) {
-        switch (button) {
-            case 'left': return this.mouseButtons.left;
-            case 'middle': return this.mouseButtons.middle;
-            case 'right': return this.mouseButtons.right;
-            default: return false;
-        }
-    }
-    
-    /**
-     * Get the current mouse position in canvas coordinates
-     */
-    getMousePosition() {
-        return { ...this.mousePosition };
-    }
-    
-    /**
-     * Get the current mouse position in world coordinates
-     */
-    getMouseWorldPosition() {
-        return { ...this.mouseWorldPosition };
-    }
-    
-    /**
-     * Get movement input as normalized vector (-1 to 1)
-     */
-    getMovementVector() {
-        return this.getMovementDirection();
-    }
-}
+    // Expose public API
+    window.GameInput = {
+        init,
+        isKeyPressed
+    };
+})();

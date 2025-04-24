@@ -1,0 +1,924 @@
+{% extends "layout.html" %}
+
+{% block title %}Realm Weaver - Inventory{% endblock %}
+
+{% block content %}
+<div class="inventory-page">
+    <div class="inventory-header">
+        <h2>Inventory</h2>
+        <div class="character-info">
+            <div class="character-name">{{ character.name }}</div>
+            <div class="character-stats">Level {{ character.level }} {{ character.character_class }}</div>
+            <div class="character-gold">Gold: {{ character.gold }}</div>
+        </div>
+        <div class="navigation-buttons">
+            <a href="{{ url_for('game.game_home') }}" class="btn btn-outline">Back to Game</a>
+        </div>
+    </div>
+    
+    <div class="inventory-container">
+        <div class="inventory-sidebar">
+            <div class="equipped-section">
+                <h3>Equipped Items</h3>
+                <div class="equipment-slots">
+                    <div class="equipment-slot" data-slot="head">
+                        {% for item in equipped_items %}
+                            {% if item.subtype == 'helmet' or item.subtype == 'hat' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Head</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="equipment-slot" data-slot="body">
+                        {% for item in equipped_items %}
+                            {% if item.subtype == 'chestplate' or item.subtype == 'robe' or item.subtype == 'tunic' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Body</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="equipment-slot" data-slot="main_hand">
+                        {% for item in equipped_items %}
+                            {% if item.item_type == 'weapon' and item.subtype != 'shield' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Weapon</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="equipment-slot" data-slot="off_hand">
+                        {% for item in equipped_items %}
+                            {% if item.subtype == 'shield' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Off-hand</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="equipment-slot" data-slot="hands">
+                        {% for item in equipped_items %}
+                            {% if item.subtype == 'gloves' or item.subtype == 'gauntlets' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Hands</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="equipment-slot" data-slot="feet">
+                        {% for item in equipped_items %}
+                            {% if item.subtype == 'boots' or item.subtype == 'shoes' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Feet</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="equipment-slot" data-slot="neck">
+                        {% for item in equipped_items %}
+                            {% if item.subtype == 'amulet' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Neck</div>
+                        {% endfor %}
+                    </div>
+                    
+                    <div class="equipment-slot" data-slot="ring">
+                        {% for item in equipped_items %}
+                            {% if item.subtype == 'ring' %}
+                                <div class="equipped-item" data-item-id="{{ item.id }}">
+                                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                                    <div class="item-tooltip">
+                                        <h4>{{ item.name }}</h4>
+                                        <p>{{ item.description }}</p>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% else %}
+                            <div class="empty-slot">Ring</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="character-stats-section">
+                <h3>Character Stats</h3>
+                <div class="stats-list">
+                    <div class="stat-item">
+                        <span class="stat-name">Health:</span>
+                        <span class="stat-value">{{ character.attributes.health }}/{{ character.attributes.max_health }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Mana:</span>
+                        <span class="stat-value">{{ character.attributes.mana }}/{{ character.attributes.max_mana }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Strength:</span>
+                        <span class="stat-value">{{ character.attributes.strength }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Intelligence:</span>
+                        <span class="stat-value">{{ character.attributes.intelligence }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Agility:</span>
+                        <span class="stat-value">{{ character.attributes.agility }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Charisma:</span>
+                        <span class="stat-value">{{ character.attributes.charisma }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Physical Defense:</span>
+                        <span class="stat-value">{{ character.attributes.physical_defense }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Magic Defense:</span>
+                        <span class="stat-value">{{ character.attributes.magic_defense }}</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Critical Chance:</span>
+                        <span class="stat-value">{{ character.attributes.critical_chance }}%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="inventory-content">
+            <div class="inventory-tabs">
+                <button class="tab-button active" data-tab="all">All Items</button>
+                <button class="tab-button" data-tab="weapons">Weapons</button>
+                <button class="tab-button" data-tab="armor">Armor</button>
+                <button class="tab-button" data-tab="consumables">Consumables</button>
+                <button class="tab-button" data-tab="quest">Quest Items</button>
+                <button class="tab-button" data-tab="other">Other</button>
+            </div>
+            
+            <div class="inventory-capacity">
+                <span>Capacity: {{ inventory.used_slots }}/{{ inventory.max_slots }}</span>
+            </div>
+            
+            <div class="inventory-grid" id="inventoryGrid">
+                <!-- Weapons -->
+                {% for item in weapons %}
+                <div class="inventory-item" data-item-id="{{ item.id }}" data-item-type="weapon">
+                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn use-btn" data-action="equip">Equip</button>
+                        <button class="item-action-btn info-btn" data-action="info">Info</button>
+                    </div>
+                    <div class="item-tooltip">
+                        <h4>{{ item.name }}</h4>
+                        <p class="item-rarity {{ item.rarity }}">{{ item.rarity|title }}</p>
+                        <p>{{ item.description }}</p>
+                        <div class="item-properties">
+                            {% if item.properties %}
+                                {% set props = item.properties|from_json %}
+                                {% if props.damage %}
+                                <div class="item-property">Damage: {{ props.damage }}</div>
+                                {% endif %}
+                                {% if props.durability %}
+                                <div class="item-property">Durability: {{ props.durability }}/{{ props.max_durability }}</div>
+                                {% endif %}
+                                {% if props.value %}
+                                <div class="item-property">Value: {{ props.value }} gold</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Armor -->
+                {% for item in armor %}
+                <div class="inventory-item" data-item-id="{{ item.id }}" data-item-type="armor">
+                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn use-btn" data-action="equip">Equip</button>
+                        <button class="item-action-btn info-btn" data-action="info">Info</button>
+                    </div>
+                    <div class="item-tooltip">
+                        <h4>{{ item.name }}</h4>
+                        <p class="item-rarity {{ item.rarity }}">{{ item.rarity|title }}</p>
+                        <p>{{ item.description }}</p>
+                        <div class="item-properties">
+                            {% if item.properties %}
+                                {% set props = item.properties|from_json %}
+                                {% if props.defense %}
+                                <div class="item-property">Defense: {{ props.defense }}</div>
+                                {% endif %}
+                                {% if props.durability %}
+                                <div class="item-property">Durability: {{ props.durability }}/{{ props.max_durability }}</div>
+                                {% endif %}
+                                {% if props.value %}
+                                <div class="item-property">Value: {{ props.value }} gold</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Consumables -->
+                {% for item in consumables %}
+                <div class="inventory-item" data-item-id="{{ item.id }}" data-item-type="consumable">
+                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn use-btn" data-action="use">Use</button>
+                        <button class="item-action-btn info-btn" data-action="info">Info</button>
+                    </div>
+                    <div class="item-tooltip">
+                        <h4>{{ item.name }}</h4>
+                        <p class="item-rarity {{ item.rarity }}">{{ item.rarity|title }}</p>
+                        <p>{{ item.description }}</p>
+                        <div class="item-properties">
+                            {% if item.properties %}
+                                {% set props = item.properties|from_json %}
+                                {% if props.restore_health %}
+                                <div class="item-property">Restores {{ props.restore_health }} Health</div>
+                                {% endif %}
+                                {% if props.restore_mana %}
+                                <div class="item-property">Restores {{ props.restore_mana }} Mana</div>
+                                {% endif %}
+                                {% if props.value %}
+                                <div class="item-property">Value: {{ props.value }} gold</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Quest Items -->
+                {% for item in quest_items %}
+                <div class="inventory-item" data-item-id="{{ item.id }}" data-item-type="quest">
+                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn info-btn" data-action="info">Info</button>
+                    </div>
+                    <div class="item-tooltip">
+                        <h4>{{ item.name }}</h4>
+                        <p class="item-quest-tag">Quest Item</p>
+                        <p>{{ item.description }}</p>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <!-- Other Items -->
+                {% for item in other_items %}
+                <div class="inventory-item" data-item-id="{{ item.id }}" data-item-type="other">
+                    <div class="item-icon" style="background-position: {{ item.id % 10 * -40 }}px {{ item.id // 10 * -40 }}px;"></div>
+                    <div class="item-name">{{ item.name }}</div>
+                    <div class="item-actions">
+                        <button class="item-action-btn info-btn" data-action="info">Info</button>
+                    </div>
+                    <div class="item-tooltip">
+                        <h4>{{ item.name }}</h4>
+                        <p class="item-rarity {{ item.rarity }}">{{ item.rarity|title }}</p>
+                        <p>{{ item.description }}</p>
+                        <div class="item-properties">
+                            {% if item.properties %}
+                                {% set props = item.properties|from_json %}
+                                {% if props.value %}
+                                <div class="item-property">Value: {{ props.value }} gold</div>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="item-detail-panel" id="itemDetailPanel">
+                <div class="item-detail-header">
+                    <h3 id="detailItemName">Item Name</h3>
+                    <button id="closeDetailBtn" class="close-button">&times;</button>
+                </div>
+                <div class="item-detail-content">
+                    <div class="item-detail-icon" id="detailItemIcon"></div>
+                    <div class="item-detail-info">
+                        <p id="detailItemDescription">Item description goes here...</p>
+                        <div class="item-detail-properties" id="detailItemProperties"></div>
+                    </div>
+                </div>
+                <div class="item-detail-actions" id="detailItemActions">
+                    <button class="btn btn-primary" id="detailUseBtn">Use</button>
+                    <button class="btn btn-outline" id="detailDropBtn">Drop</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .inventory-page {
+        max-width: 1200px;
+        margin: 40px auto;
+        padding: 0 20px;
+    }
+    
+    .inventory-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    
+    .character-info {
+        text-align: center;
+    }
+    
+    .character-name {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .inventory-container {
+        display: grid;
+        grid-template-columns: 300px 1fr;
+        gap: 2rem;
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-md);
+    }
+    
+    /* Equipped items section */
+    .equipped-section {
+        margin-bottom: 2rem;
+    }
+    
+    .equipment-slots {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    
+    .equipment-slot {
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: var(--radius-sm);
+        height: 80px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+    
+    .empty-slot {
+        color: #888;
+        font-style: italic;
+    }
+    
+    .equipped-item {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+    }
+    
+    .item-icon {
+        width: 40px;
+        height: 40px;
+        background-image: url('/static/assets/sprites/items.png');
+        background-repeat: no-repeat;
+    }
+    
+    .item-tooltip {
+        display: none;
+        position: absolute;
+        left: 105%;
+        top: 0;
+        width: 220px;
+        background-color: var(--card-background);
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+        box-shadow: var(--shadow-md);
+        z-index: 10;
+    }
+    
+    .equipped-item:hover .item-tooltip,
+    .inventory-item:hover .item-tooltip {
+        display: block;
+    }
+    
+    /* Character stats section */
+    .stats-list {
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+    }
+    
+    .stat-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-name {
+        font-weight: 500;
+    }
+    
+    /* Inventory content */
+    .inventory-tabs {
+        display: flex;
+        margin-bottom: 1rem;
+    }
+    
+    .tab-button {
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        transition: all 0.3s;
+    }
+    
+    .tab-button.active {
+        border-bottom-color: var(--primary-color);
+        font-weight: 500;
+    }
+    
+    .inventory-capacity {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        color: #666;
+    }
+    
+    .inventory-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 1rem;
+        max-height: 500px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+    
+    .inventory-item {
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+        text-align: center;
+        position: relative;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .inventory-item:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+    
+    .item-name {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .item-actions {
+        margin-top: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 0.5rem;
+    }
+    
+    .item-action-btn {
+        flex: 1;
+        padding: 0.25rem 0;
+        font-size: 0.75rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-xs);
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    
+    .use-btn:hover {
+        background-color: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+    
+    .info-btn:hover {
+        background-color: #f0f0f0;
+    }
+    
+    /* Item properties */
+    .item-properties {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .item-property {
+        margin-bottom: 0.25rem;
+    }
+    
+    .item-rarity {
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .common {
+        color: #666;
+    }
+    
+    .uncommon {
+        color: #2e7d32;
+    }
+    
+    .rare {
+        color: #1565c0;
+    }
+    
+    .epic {
+        color: #6a1b9a;
+    }
+    
+    .legendary {
+        color: #ff6f00;
+    }
+    
+    .item-quest-tag {
+        font-weight: 500;
+        color: #c62828;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Item detail panel */
+    .item-detail-panel {
+        display: none;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 400px;
+        background-color: var(--card-background);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-lg);
+        z-index: 100;
+    }
+    
+    .item-detail-header {
+        padding: 1rem;
+        background-color: var(--primary-color);
+        color: white;
+        border-top-left-radius: var(--radius-md);
+        border-top-right-radius: var(--radius-md);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .item-detail-header h3 {
+        margin: 0;
+        color: white;
+    }
+    
+    .close-button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 1.5rem;
+        cursor: pointer;
+    }
+    
+    .item-detail-content {
+        padding: 1.5rem;
+        display: flex;
+        gap: 1.5rem;
+    }
+    
+    .item-detail-icon {
+        width: 80px;
+        height: 80px;
+        background-image: url('/static/assets/sprites/items_large.png');
+        background-repeat: no-repeat;
+        background-size: 800px auto;
+    }
+    
+    .item-detail-info {
+        flex: 1;
+    }
+    
+    .item-detail-properties {
+        margin-top: 1rem;
+        background-color: rgba(0, 0, 0, 0.02);
+        border-radius: var(--radius-sm);
+        padding: 1rem;
+    }
+    
+    .item-detail-actions {
+        padding: 1rem;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-bottom-left-radius: var(--radius-md);
+        border-bottom-right-radius: var(--radius-md);
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .inventory-container {
+            grid-template-columns: 1fr;
+        }
+        
+        .inventory-sidebar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .inventory-sidebar {
+            grid-template-columns: 1fr;
+        }
+        
+        .inventory-tabs {
+            flex-wrap: wrap;
+        }
+        
+        .tab-button {
+            flex: 1;
+            min-width: 100px;
+        }
+        
+        .item-detail-panel {
+            width: 90%;
+            max-width: 400px;
+        }
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab switching
+        const tabButtons = document.querySelectorAll('.tab-button');
+        const inventoryItems = document.querySelectorAll('.inventory-item');
+        
+        tabButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Update active tab button
+                tabButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter items
+                const tabType = this.getAttribute('data-tab');
+                
+                if (tabType === 'all') {
+                    inventoryItems.forEach(item => item.style.display = 'block');
+                } else {
+                    inventoryItems.forEach(item => {
+                        if (item.getAttribute('data-item-type') === tabType) {
+                            item.style.display = 'block';
+                        } else {
+                            item.style.display = 'none';
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Item detail panel
+        const itemDetailPanel = document.getElementById('itemDetailPanel');
+        const closeDetailBtn = document.getElementById('closeDetailBtn');
+        const detailItemName = document.getElementById('detailItemName');
+        const detailItemIcon = document.getElementById('detailItemIcon');
+        const detailItemDescription = document.getElementById('detailItemDescription');
+        const detailItemProperties = document.getElementById('detailItemProperties');
+        const detailUseBtn = document.getElementById('detailUseBtn');
+        const detailDropBtn = document.getElementById('detailDropBtn');
+        
+        // Open item detail when clicking info button
+        document.querySelectorAll('.info-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const itemElement = this.closest('.inventory-item');
+                const itemId = itemElement.getAttribute('data-item-id');
+                const itemType = itemElement.getAttribute('data-item-type');
+                const itemName = itemElement.querySelector('.item-name').textContent;
+                const itemDescription = itemElement.querySelector('.item-tooltip p:not(.item-rarity):not(.item-quest-tag)').textContent;
+                
+                // Update detail panel content
+                detailItemName.textContent = itemName;
+                detailItemIcon.style.backgroundPosition = itemElement.querySelector('.item-icon').style.backgroundPosition;
+                detailItemDescription.textContent = itemDescription;
+                
+                // Clear and update properties
+                detailItemProperties.innerHTML = '';
+                const properties = itemElement.querySelector('.item-properties');
+                if (properties) {
+                    detailItemProperties.innerHTML = properties.innerHTML;
+                }
+                
+                // Show/hide use button based on item type
+                if (itemType === 'consumable' || itemType === 'weapon' || itemType === 'armor') {
+                    detailUseBtn.style.display = 'block';
+                    detailUseBtn.textContent = itemType === 'consumable' ? 'Use' : 'Equip';
+                } else {
+                    detailUseBtn.style.display = 'none';
+                }
+                
+                // Show detail panel
+                itemDetailPanel.style.display = 'block';
+                
+                // Set item data attributes for action buttons
+                detailUseBtn.setAttribute('data-item-id', itemId);
+                detailUseBtn.setAttribute('data-item-type', itemType);
+                detailDropBtn.setAttribute('data-item-id', itemId);
+            });
+        });
+        
+        // Close detail panel button
+        closeDetailBtn.addEventListener('click', function() {
+            itemDetailPanel.style.display = 'none';
+        });
+        
+        // Use/Equip action button
+        detailUseBtn.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            const itemType = this.getAttribute('data-item-type');
+            const action = itemType === 'consumable' ? 'use' : 'equip';
+            
+            // Send action to server
+            fetch(`/api/item/${itemId}/${action}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show notification
+                    const notification = document.createElement('div');
+                    notification.className = 'notification success';
+                    notification.textContent = data.message;
+                    document.querySelector('.notifications').appendChild(notification);
+                    
+                    // Refresh page after short delay
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 500);
+                } else {
+                    // Show error
+                    const notification = document.createElement('div');
+                    notification.className = 'notification error';
+                    notification.textContent = data.message;
+                    document.querySelector('.notifications').appendChild(notification);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+            
+            // Close panel
+            itemDetailPanel.style.display = 'none';
+        });
+        
+        // Drop item button
+        detailDropBtn.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            
+            if (confirm('Are you sure you want to drop this item? This action cannot be undone.')) {
+                // Send action to server
+                fetch(`/api/item/${itemId}/drop`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'notification success';
+                        notification.textContent = data.message;
+                        document.querySelector('.notifications').appendChild(notification);
+                        
+                        // Refresh page after short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        // Show error
+                        const notification = document.createElement('div');
+                        notification.className = 'notification error';
+                        notification.textContent = data.message;
+                        document.querySelector('.notifications').appendChild(notification);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+                
+                // Close panel
+                itemDetailPanel.style.display = 'none';
+            }
+        });
+        
+        // Direct equip/use buttons in item cards
+        document.querySelectorAll('.use-btn').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const itemElement = this.closest('.inventory-item');
+                const itemId = itemElement.getAttribute('data-item-id');
+                const itemType = itemElement.getAttribute('data-item-type');
+                const action = this.getAttribute('data-action');
+                
+                // Send action to server
+                fetch(`/api/item/${itemId}/${action}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show notification
+                        const notification = document.createElement('div');
+                        notification.className = 'notification success';
+                        notification.textContent = data.message;
+                        document.querySelector('.notifications').appendChild(notification);
+                        
+                        // Refresh page after short delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 500);
+                    } else {
+                        // Show error
+                        const notification = document.createElement('div');
+                        notification.className = 'notification error';
+                        notification.textContent = data.message;
+                        document.querySelector('.notifications').appendChild(notification);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}
